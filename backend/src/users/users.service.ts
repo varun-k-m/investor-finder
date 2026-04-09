@@ -12,4 +12,8 @@ export class UsersService {
   async findByClerkId(clerkId: string) {
     return this.usersRepository.findByClerkId(clerkId);
   }
+
+  async incrementSearchesUsed(userId: string): Promise<void> {
+    return this.usersRepository.incrementSearchesUsed(userId);
+  }
 }

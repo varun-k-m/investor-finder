@@ -33,4 +33,8 @@ export class UsersRepository {
   async findByClerkId(clerkId: string): Promise<User | null> {
     return this.repo.findOne({ where: { clerk_id: clerkId } });
   }
+
+  async incrementSearchesUsed(userId: string): Promise<void> {
+    await this.repo.increment({ id: userId }, 'searches_used', 1);
+  }
 }
