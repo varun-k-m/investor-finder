@@ -14,7 +14,8 @@ import { UsersService } from '../users/users.service';
 
 interface ClerkUserPayload {
   id: string;
-  email_addresses: { email_address: string; primary: boolean }[];
+  primary_email_address_id: string;
+  email_addresses: { id: string; email_address: string }[];
   first_name: string | null;
   last_name: string | null;
 }
@@ -61,7 +62,7 @@ export class ClerkWebhookController {
     const { type, data } = event;
 
     if (type === 'user.created' || type === 'user.updated') {
-      const primaryEmail = data.email_addresses.find((e) => e.primary);
+      const primaryEmail = data.email_addresses.find((e) => e.id === data.primary_email_address_id);
       await this.usersService.upsertFromClerk({
         clerkId: data.id,
         email: primaryEmail?.email_address ?? '',
