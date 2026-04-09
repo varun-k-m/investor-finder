@@ -56,6 +56,7 @@ export interface RankedInvestor extends SynthesisedInvestor {
   geo_fit: number;
   overall: number;
   fit_reasoning: string;
+  rank_position: number;
 }
 
 // ─── Database Entity Types ────────────────────────────────────────────────────

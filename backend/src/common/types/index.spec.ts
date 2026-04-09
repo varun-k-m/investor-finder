@@ -105,6 +105,7 @@ describe('Shared Types', () => {
       geo_fit: 100,
       overall: 89.2,
       fit_reasoning: 'Strong match across all dimensions.',
+      rank_position: 1,
     };
     expect(ranked.overall).toBeGreaterThan(0);
   });
