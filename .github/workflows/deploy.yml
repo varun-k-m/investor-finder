@@ -1,0 +1,75 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy-frontend:
+    name: Deploy frontend to Vercel
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install frontend dependencies
+        run: npm ci --workspace=frontend
+
+      - name: Build frontend
+        run: npm run build --workspace=frontend
+        env:
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+
+      - name: Deploy to Vercel
+        run: |
+          npm i -g vercel
+          vercel --prod --token=${{ secrets.VERCEL_TOKEN }} \
+            --yes \
+            --cwd frontend
+        env:
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+
+      - name: Upload Sentry source maps
+        if: ${{ secrets.SENTRY_DSN != '' }}
+        run: |
+          npx @sentry/cli sourcemaps inject ./frontend/.next
+          npx @sentry/cli sourcemaps upload ./frontend/.next
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+
+  deploy-backend:
+    name: Deploy backend to Railway
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Railway CLI
+        run: npm i -g @railway/cli
+
+      - name: Deploy to Railway
+        run: railway up --service=backend
+        working-directory: backend
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+      - name: Upload Sentry source maps
+        if: ${{ secrets.SENTRY_DSN != '' }}
+        run: |
+          npm run build --workspace=backend
+          npx @sentry/cli sourcemaps inject ./backend/dist
+          npx @sentry/cli sourcemaps upload ./backend/dist
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}

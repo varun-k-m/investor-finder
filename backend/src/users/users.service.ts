@@ -1,0 +1,15 @@
+import { Injectable } from '@nestjs/common';
+import { UsersRepository, UpsertFromClerkDto } from './users.repository';
+
+@Injectable()
+export class UsersService {
+  constructor(private readonly usersRepository: UsersRepository) {}
+
+  async upsertFromClerk(dto: UpsertFromClerkDto): Promise<void> {
+    return this.usersRepository.upsertFromClerk(dto);
+  }
+
+  async findByClerkId(clerkId: string) {
+    return this.usersRepository.findByClerkId(clerkId);
+  }
+}
