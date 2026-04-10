@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@clerk/nextjs';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -26,7 +27,7 @@ function truncate(str: string, max: number) {
   return str.length > max ? str.slice(0, max) + '...' : str;
 }
 
-export default function DashboardPage() {
+function DashboardContent() {
   const { getToken } = useAuth();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -105,5 +106,13 @@ export default function DashboardPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense>
+      <DashboardContent />
+    </Suspense>
   );
 }
