@@ -46,6 +46,8 @@ export interface SynthesisedInvestor {
   sources: string[];
   source_urls: string[];
   conflicts: string[];
+  /** Raw page text from web/news sources — used by SynthesisService; stripped before persistence */
+  raw_text?: string;
 }
 
 /** Scored investor from Ranking agent. [Source: arch §6.5] */

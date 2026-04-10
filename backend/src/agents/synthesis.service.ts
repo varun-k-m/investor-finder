@@ -2,32 +2,30 @@ import { Injectable, Inject, Logger } from '@nestjs/common';
 import Anthropic from '@anthropic-ai/sdk';
 import { ParsedIdea, SynthesisedInvestor } from '../common/types';
 
-const SYNTHESIS_SYSTEM_PROMPT = `You are a data synthesis expert. You will receive raw investor records from
-multiple sources. Your job is to:
+const SYNTHESIS_SYSTEM_PROMPT = `You are an expert at identifying and extracting investor profiles from raw web data.
 
-1. NORMALISE: Map every record to the canonical schema below.
-2. DEDUPLICATE: Identify records referring to the same entity using:
-   - Name similarity (fuzzy match — "Sequoia" and "Sequoia Capital" are the same)
-   - Website/domain match (strongest signal — exact match = definite same entity)
-   - Sector + geography overlap (tiebreaker for ambiguous names)
-3. MERGE: For confirmed duplicates, merge into one record:
-   - Use the most complete/formal name
-   - Union all sector tags, deduplicate synonyms
-   - Take the range for numeric fields (check size min/max)
-   - Prefer the source with highest data quality for contact fields
-4. FLAG conflicts: If two sources disagree on a critical field (investment stage,
-   check size by >3x), set that field to null and add to "conflicts" array.
+You will receive raw records from web searches. Each record has:
+- canonical_name: the page title (may be an article title, not an investor name)
+- website / source_urls: the source URL
+- raw_text: the actual page content — THIS is where investor information lives
+- sectors/stages/etc: may be empty — extract these from raw_text if available
 
-Canonical schema per investor:
+Your job:
+1. EXTRACT: From each record's raw_text (and canonical_name/URL), identify real investors mentioned (venture capital firms, angel investors, family offices, corporate VCs). Ignore list articles, news sites, and non-investor pages.
+2. NORMALISE: For each real investor found, produce one canonical object.
+3. DEDUPLICATE: Merge records referring to the same investor (same name, domain, or clearly the same entity).
+4. EXTRACT FIELDS from raw_text where possible: sectors they invest in, stages (pre-seed/seed/series-a/etc), geography focus, check sizes, website.
+
+Canonical schema per investor (output only these fields):
 {
-  "canonical_name": string,
-  "fund_name": string | null,
-  "website": string | null,
-  "sectors": string[],
-  "stages": string[],
-  "geo_focus": string[],
-  "check_min": number | null,
-  "check_max": number | null,
+  "canonical_name": string,        // formal name e.g. "Sequoia Capital"
+  "fund_name": string | null,      // fund name if different from firm name
+  "website": string | null,        // investor's own website
+  "sectors": string[],             // e.g. ["fintech", "saas"]
+  "stages": string[],              // e.g. ["seed", "series-a"]
+  "geo_focus": string[],           // e.g. ["US", "Southeast Asia"]
+  "check_min": number | null,      // minimum check size in USD
+  "check_max": number | null,      // maximum check size in USD
   "contact_email": string | null,
   "linkedin_url": string | null,
   "sources": string[],
@@ -35,8 +33,9 @@ Canonical schema per investor:
   "conflicts": string[]
 }
 
-Return ONLY a JSON array of canonical investor objects. No preamble.
-Input records: {{RAW_RECORDS}}`;
+Return ONLY a valid JSON array. No preamble, no markdown fences. Return [] only if zero real investors can be identified.
+Input records:
+{{RAW_RECORDS}}`;
 
 /** [Source: docs/architecture.md#Section 6.4] */
 @Injectable()
@@ -54,14 +53,20 @@ export class SynthesisService {
     // Trim to 50 most unique by domain to avoid context overflow
     const trimmed = this.trimByDomain(rawRecords, 50);
 
+    // Truncate raw_text per record to keep total prompt manageable
+    const truncated = trimmed.map((r) => ({
+      ...r,
+      raw_text: r.raw_text ? r.raw_text.slice(0, 800) : undefined,
+    }));
+
     const systemPrompt = SYNTHESIS_SYSTEM_PROMPT.replace(
       '{{RAW_RECORDS}}',
-      JSON.stringify(trimmed),
+      JSON.stringify(truncated),
     );
 
     const response = await this.anthropic.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 4000,
+      max_tokens: 8000,
       system: systemPrompt,
       messages: [{ role: 'user', content: 'Synthesise the investor records above.' }],
     });

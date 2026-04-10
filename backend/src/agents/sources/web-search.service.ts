@@ -77,6 +77,7 @@ export class WebSearchService {
       sources: ['web'],
       source_urls: [result.url],
       conflicts: [],
+      raw_text: result.content ?? undefined,
     };
   }
 
