@@ -23,6 +23,12 @@ export class SearchesController {
     return this.searchesService.create(dto, user.sub);
   }
 
+  /** GET /api/v1/searches — list user's past searches */
+  @Get()
+  async findAll(@CurrentUser() user: { sub: string }) {
+    return this.searchesService.findAll(user.sub);
+  }
+
   /** S3-002: AC 1–4 */
   @Get(':id')
   async findOne(@Param('id') id: string, @CurrentUser() user: { sub: string }) {

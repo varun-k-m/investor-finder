@@ -23,6 +23,7 @@ async function buildService(overrides: Partial<{
 }> = {}) {
   const searchRepo = overrides.searchRepo ?? {
     findOne: jest.fn().mockResolvedValue(mockCompleteSearch),
+    find: jest.fn().mockResolvedValue([mockCompleteSearch]),
     create: jest.fn().mockReturnValue(mockSearch),
     save: jest.fn().mockResolvedValue(mockSearch),
     update: jest.fn().mockResolvedValue({}),
@@ -87,6 +88,34 @@ describe('SearchesService.create', () => {
     await expect(
       service.create({ raw_input: 'A fintech startup idea for SMBs' }, 'bad-clerk'),
     ).rejects.toThrow(UnauthorizedException);
+  });
+});
+
+// ─── findAll ─────────────────────────────────────────────────────────────────
+
+describe('SearchesService.findAll', () => {
+  it('returns all searches for user ordered newest first', async () => {
+    const searches = [mockCompleteSearch, { ...mockCompleteSearch, id: 'search-2' }];
+    const { service } = await buildService({
+      searchRepo: {
+        findOne: jest.fn().mockResolvedValue(mockCompleteSearch),
+        create: jest.fn(), save: jest.fn(), update: jest.fn(),
+        find: jest.fn().mockResolvedValue(searches),
+      },
+    });
+    const result = await service.findAll('clerk-1');
+    expect(result).toHaveLength(2);
+    expect(result[0]).toMatchObject({ id: 'search-1' });
+  });
+
+  it('throws 401 when user not found', async () => {
+    const { service } = await buildService({
+      usersService: {
+        findByClerkId: jest.fn().mockResolvedValue(null),
+        incrementSearchesUsed: jest.fn(),
+      },
+    });
+    await expect(service.findAll('bad-clerk')).rejects.toThrow(UnauthorizedException);
   });
 });
 

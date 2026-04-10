@@ -59,6 +59,16 @@ export class SearchesService {
     return { id: search.id, status: 'pending' };
   }
 
+  /** [Source: docs/architecture.md#Section 5.2 — GET /searches list] */
+  async findAll(clerkSub: string): Promise<Search[]> {
+    const user = await this.usersService.findByClerkId(clerkSub);
+    if (!user) throw new UnauthorizedException();
+    return this.searchRepo.find({
+      where: { user_id: user.id },
+      order: { created_at: 'DESC' },
+    });
+  }
+
   /** AC: S3-002 — 1–4 [Source: docs/architecture.md#Section 5.2] */
   async findOne(id: string, clerkSub: string): Promise<Search> {
     const user = await this.usersService.findByClerkId(clerkSub);

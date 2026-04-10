@@ -16,4 +16,8 @@ export class UsersService {
   async incrementSearchesUsed(userId: string): Promise<void> {
     return this.usersRepository.incrementSearchesUsed(userId);
   }
+
+  async getSavedInvestors(clerkId: string) {
+    return this.usersRepository.getSavedInvestors(clerkId);
+  }
 }
