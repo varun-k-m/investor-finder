@@ -12,8 +12,6 @@ const fadeUp = (delay = 0) => ({
 
 export function HeroSection() {
   const shouldReduceMotion = useReducedMotion();
-  const motion_props = shouldReduceMotion ? {} : undefined;
-
   return (
     <section className="relative flex flex-col items-center justify-center text-center px-6 py-28 bg-gradient-to-b from-background via-primary/5 to-background overflow-hidden">
       <motion.span

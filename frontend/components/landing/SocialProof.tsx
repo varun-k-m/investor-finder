@@ -32,7 +32,7 @@ export function SocialProof() {
               key={q.name}
               className="rounded-xl border border-border bg-card p-6 space-y-4"
             >
-              <p className="text-sm leading-relaxed text-foreground">"{q.quote}"</p>
+              <p className="text-sm leading-relaxed text-foreground">&ldquo;{q.quote}&rdquo;</p>
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-semibold text-primary">
                   {q.initials}
