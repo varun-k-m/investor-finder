@@ -9,6 +9,7 @@ import { FitBreakdown } from './FitBreakdown';
 import { PitchModal } from './PitchModal';
 import { Button } from '@/components/ui/button';
 import { apiFetch } from '@/lib/api';
+import { track } from '@/lib/posthog';
 
 interface SaveResponse {
   id: string;
@@ -27,7 +28,10 @@ export function InvestorCard({ investor }: { investor: InvestorProfile }) {
       apiFetch<SaveResponse>(`/investors/${investor.id}/save`, getToken, {
         method: 'POST',
       }),
-    onSuccess: () => setSaved(true),
+    onSuccess: () => {
+      setSaved(true);
+      track('investor_saved', { investor_id: investor.id, investor_name: investor.canonical_name });
+    },
   });
 
   return (

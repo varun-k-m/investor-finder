@@ -4,8 +4,35 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as express from 'express';
 import { AppModule } from './app.module';
 
+// Sentry must be initialised before the app is created [Source: arch §3]
+const sentryDsn = process.env.SENTRY_DSN;
+if (sentryDsn) {
+  // Dynamic require so the import only fires when Sentry is configured
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const Sentry = require('@sentry/nestjs') as typeof import('@sentry/nestjs');
+  Sentry.init({
+    dsn: sentryDsn,
+    environment: process.env.NODE_ENV ?? 'development',
+    release: process.env.npm_package_version,
+    beforeSend(event) {
+      // Do not capture HTTP 4xx — only report server errors
+      const status = event.extra?.['http.response.status_code'] as number | undefined;
+      if (status && status < 500) return null;
+      return event;
+    },
+  });
+}
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Wire Sentry express error handler (captures unhandled 5xx) when DSN is set
+  if (sentryDsn) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { setupExpressErrorHandler } = require('@sentry/nestjs') as typeof import('@sentry/nestjs');
+    const httpAdapter = app.getHttpAdapter();
+    setupExpressErrorHandler(httpAdapter.getInstance());
+  }
 
   // Raw body for Clerk webhook — svix requires exact bytes for HMAC verification.
   // Must be registered BEFORE the global JSON body parser. [Source: arch §12]

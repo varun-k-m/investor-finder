@@ -1,5 +1,6 @@
 import {
   Controller,
+  Logger,
   Post,
   Req,
   Res,
@@ -11,6 +12,7 @@ import { Webhook } from 'svix';
 import { Request, Response } from 'express';
 import { Public } from './public.decorator';
 import { UsersService } from '../users/users.service';
+import { EmailService } from '../email/email.service';
 
 interface ClerkUserPayload {
   id: string;
@@ -22,9 +24,12 @@ interface ClerkUserPayload {
 
 @Controller()
 export class ClerkWebhookController {
+  private readonly logger = new Logger(ClerkWebhookController.name);
+
   constructor(
     private readonly configService: ConfigService,
     private readonly usersService: UsersService,
+    private readonly emailService: EmailService,
   ) {}
 
   @Post('auth/webhook')
@@ -44,7 +49,6 @@ export class ClerkWebhookController {
 
     let event: { type: string; data: ClerkUserPayload };
     try {
-      // req.body is the raw Buffer when rawBody middleware is active
       const payload =
         req.body instanceof Buffer
           ? req.body.toString('utf8')
@@ -63,11 +67,19 @@ export class ClerkWebhookController {
 
     if (type === 'user.created' || type === 'user.updated') {
       const primaryEmail = data.email_addresses.find((e) => e.id === data.primary_email_address_id);
+      const name = [data.first_name, data.last_name].filter(Boolean).join(' ') || null;
       await this.usersService.upsertFromClerk({
         clerkId: data.id,
         email: primaryEmail?.email_address ?? '',
-        name: [data.first_name, data.last_name].filter(Boolean).join(' ') || null,
+        name,
       });
+
+      // Fire-and-forget welcome email on new user creation
+      if (type === 'user.created') {
+        this.emailService
+          .sendWelcomeEmail(primaryEmail?.email_address ?? '', name)
+          .catch((err) => this.logger.error('Failed to send welcome email', err));
+      }
     }
 
     return res.json({ received: true });

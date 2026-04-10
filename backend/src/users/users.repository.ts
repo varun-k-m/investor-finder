@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, MoreThanOrEqual } from 'typeorm';
 import { User } from './entities/user.entity';
 import { SavedInvestor } from '../investors/entities/saved-investor.entity';
+import { Search } from '../searches/entities/search.entity';
 
 export interface UpsertFromClerkDto {
   clerkId: string;
@@ -17,6 +18,8 @@ export class UsersRepository {
     private readonly repo: Repository<User>,
     @InjectRepository(SavedInvestor)
     private readonly savedInvestorRepo: Repository<SavedInvestor>,
+    @InjectRepository(Search)
+    private readonly searchRepo: Repository<Search>,
   ) {}
 
   async upsertFromClerk(dto: UpsertFromClerkDto): Promise<void> {
@@ -39,6 +42,22 @@ export class UsersRepository {
 
   async incrementSearchesUsed(userId: string): Promise<void> {
     await this.repo.increment({ id: userId }, 'searches_used', 1);
+  }
+
+  async deleteByClerkId(clerkId: string): Promise<void> {
+    const user = await this.findByClerkId(clerkId);
+    if (!user) return;
+    // ON DELETE CASCADE in schema handles searches, investor_profiles, saved_investors, pitch_drafts
+    await this.repo.remove(user);
+  }
+
+  async getMonthlySearchCount(userId: string): Promise<number> {
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+    return this.searchRepo.count({
+      where: { user_id: userId, created_at: MoreThanOrEqual(startOfMonth) },
+    });
   }
 
   async getSavedInvestors(clerkId: string): Promise<SavedInvestor[]> {

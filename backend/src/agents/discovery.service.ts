@@ -10,6 +10,7 @@ import { NewsSignalService } from './sources/news-signal.service';
 import { SynthesisService } from './synthesis.service';
 import { RankingService } from './ranking.service';
 import { AgentProgressStore } from '../searches/agent-progress.store';
+import { EmailService } from '../email/email.service';
 
 /** [Source: docs/architecture.md#Section 6.2] */
 @Injectable()
@@ -23,6 +24,7 @@ export class DiscoveryService {
     private readonly synthesis: SynthesisService,
     private readonly ranking: RankingService,
     private readonly progressStore: AgentProgressStore,
+    private readonly emailService: EmailService,
     @InjectRepository(InvestorProfile)
     private readonly investorRepo: Repository<InvestorProfile>,
     @InjectRepository(Search)
@@ -59,6 +61,20 @@ export class DiscoveryService {
         { status: 'complete', result_count: ranked.length, completed_at: new Date() },
       );
       this.progressStore.complete(searchId);
+
+      // Fire-and-forget search complete email
+      const search = await this.searchRepo.findOne({ where: { id: searchId }, relations: ['user'] });
+      if (search?.user) {
+        this.emailService
+          .sendSearchCompleteEmail(
+            search.user.email,
+            search.user.name,
+            searchId,
+            ranked.length,
+            search.raw_input,
+          )
+          .catch((err) => this.logger.error('Failed to send search complete email', err));
+      }
     } catch (err) {
       this.logger.error(`Discovery failed for search ${searchId}`, err);
       this.progressStore.emit(searchId, 'failed', 0);

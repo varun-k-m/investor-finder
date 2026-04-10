@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@clerk/nextjs';
+import { useSearchParams, useRouter } from 'next/navigation';
 import type { SearchSummary } from '@/types/search';
 import { Button } from '@/components/ui/button';
 import { apiFetch } from '@/lib/api';
@@ -27,6 +28,8 @@ function truncate(str: string, max: number) {
 
 export default function DashboardPage() {
   const { getToken } = useAuth();
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
   const { data, isPending } = useQuery({
     queryKey: ['searches'],
@@ -35,6 +38,17 @@ export default function DashboardPage() {
 
   return (
     <div className="p-8 max-w-5xl mx-auto">
+      {searchParams.get('upgraded') === 'true' && (
+        <div className="mb-6 rounded-md bg-green-50 border border-green-200 p-4 text-green-800 text-sm flex items-center justify-between">
+          <span>Welcome to Pro! Unlimited searches unlocked. 🎉</span>
+          <button
+            onClick={() => router.replace('/dashboard')}
+            className="ml-4 text-green-700 hover:text-green-900 font-bold"
+          >
+            ✕
+          </button>
+        </div>
+      )}
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-2xl font-semibold">Dashboard</h1>
         <Button asChild>

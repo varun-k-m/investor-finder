@@ -4,9 +4,10 @@ import { ClerkGuard } from './clerk.guard';
 import { ClerkStrategy } from './clerk.strategy';
 import { ClerkWebhookController } from './clerk-webhook.controller';
 import { UsersModule } from '../users/users.module';
+import { EmailModule } from '../email/email.module';
 
 @Module({
-  imports: [UsersModule],
+  imports: [UsersModule, EmailModule],
   controllers: [ClerkWebhookController],
   providers: [
     ClerkStrategy,

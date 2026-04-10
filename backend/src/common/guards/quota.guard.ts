@@ -13,7 +13,7 @@ import { Search } from '../../searches/entities/search.entity';
 /** [Source: docs/architecture.md#Section 12] */
 @Injectable()
 export class QuotaGuard implements CanActivate {
-  private readonly FREE_LIMIT = 50;
+  private readonly FREE_LIMIT = 3;
 
   constructor(
     private readonly usersService: UsersService,

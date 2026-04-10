@@ -14,6 +14,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { apiFetch } from '@/lib/api';
+import { track } from '@/lib/posthog';
 
 interface PitchResponse {
   id: string;
@@ -40,6 +41,7 @@ export function PitchModal({ investorId, investorName, open, onClose }: Props) {
       }),
     onSuccess: (data) => {
       setContent(data.content);
+      track('pitch_generated', { investor_id: investorId, investor_name: investorName });
     },
   });
 

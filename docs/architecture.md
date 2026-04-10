@@ -74,6 +74,8 @@ This document serves as the authoritative reference for all Claude Code developm
 | Frontend language  | TypeScript                          | Type safety across FE + BE                                              |
 | Styling            | Tailwind CSS + shadcn/ui            | Rapid UI, accessible components                                         |
 | State management   | Zustand + React Query               | Local state + server state separation                                   |
+| Animations         | Framer Motion                       | Page transitions, agent pipeline timeline, micro-interactions           |
+| Dark mode          | next-themes                         | System-preference-aware theme toggle, zero flash on load                |
 | Backend framework  | NestJS 10                           | Opinionated modules, DI, decorators — ideal for complex agent pipelines |
 | Backend runtime    | Node.js 20 LTS                      | LTS stability, async performance                                        |
 | Backend language   | TypeScript                          | Shared types with frontend via monorepo                                 |
@@ -117,6 +119,11 @@ CREATE TABLE searches (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id         UUID REFERENCES users(id) ON DELETE CASCADE,
   raw_input       TEXT NOT NULL,           -- founder's original text
+  sectors         TEXT[],                  -- optional: pre-selected sectors from structured form
+  stages          TEXT[],                  -- optional: pre-selected stages (seed|series_a|series_b|growth)
+  geo_focus       TEXT[],                  -- optional: pre-selected geographies
+  budget_min      BIGINT,                  -- optional: funding ask lower bound (USD)
+  budget_max      BIGINT,                  -- optional: funding ask upper bound (USD)
   parsed_idea     JSONB,                   -- Claude's structured extraction
   status          TEXT DEFAULT 'pending',  -- pending | running | complete | failed
   result_count    INT DEFAULT 0,
@@ -204,6 +211,43 @@ GET    /api/v1/searches              List user's past searches
 DELETE /api/v1/searches/:id          Delete a search
 ```
 
+**`POST /searches` DTO — `CreateSearchDto`:**
+
+```typescript
+class CreateSearchDto {
+  @IsString()
+  @MinLength(20)
+  raw_input: string;               // always required
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  sectors?: string[];              // pre-selected sectors from structured form
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  stages?: string[];               // pre-selected stages
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  geo_focus?: string[];            // pre-selected geographies
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  budget_min?: number;             // funding ask lower bound (USD)
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  budget_max?: number;             // funding ask upper bound (USD)
+}
+```
+
+When optional structured fields are provided, they are stored on the `searches` row and passed to the Idea Parser alongside `raw_input`. The parser merges them with any values it extracts from the free text, with the explicit fields taking precedence.
+
 ### 5.3 Investor Routes
 
 ```
@@ -253,7 +297,19 @@ data: { "search_id": "abc123", "result_count": 18 }
 **Trigger:** Called synchronously when `POST /api/v1/searches` is received.  
 **Model:** `claude-sonnet-4-6`  
 **Max tokens:** 800  
-**Purpose:** Extract structured metadata from the founder's free-text idea.
+**Purpose:** Extract structured metadata from the founder's free-text idea. When the request includes optional structured fields (`sectors`, `stages`, `geo_focus`, `budget_min`, `budget_max`), those values override the corresponding fields Claude would otherwise infer — Claude still extracts anything not explicitly provided.
+
+**Service signature:**
+
+```typescript
+async parse(rawInput: string, structured?: {
+  sectors?: string[];
+  stages?: string[];
+  geo_focus?: string[];
+  budget_min?: number;
+  budget_max?: number;
+}): Promise<ParsedIdea>
+```
 
 **System prompt:**
 
@@ -270,12 +326,24 @@ Schema:
   "stage": "idea | mvp | revenue | growth",
   "geography": "founder's country/region",
   "target_market": "B2B | B2C | B2B2C",
-  "funding_ask": { "amount": number_in_usd, "currency_mentioned": "string" },
+  "funding_ask": { "min": number_in_usd | null, "max": number_in_usd | null },
   "keywords": ["5-8 keywords for investor search"],
   "one_liner": "what this product does in one sentence"
 }
 
 If any field cannot be determined, set it to null. Never guess wildly.
+
+OVERRIDE RULES: If the user message contains a JSON block prefixed with
+"STRUCTURED_OVERRIDES:", those values take precedence over anything you
+extract from the free text. Merge them into your output unchanged.
+```
+
+The service prepends structured overrides to the user message before calling Claude:
+
+```typescript
+const userMessage = structured
+  ? `STRUCTURED_OVERRIDES: ${JSON.stringify(structured)}\n\nFOUNDER DESCRIPTION:\n${rawInput}`
+  : rawInput;
 ```
 
 ### 6.2 Agent 2: Discovery Orchestrator
@@ -761,11 +829,11 @@ app/
 ```
 components/
 ├── search/
-│   ├── IdeaForm.tsx            ← Multi-step idea input form
-│   ├── AgentProgressBar.tsx    ← SSE-connected real-time progress
-│   └── BudgetSlider.tsx        ← Funding range input
+│   ├── IdeaForm.tsx            ← Structured multi-field form (description + selectors + slider)
+│   ├── AgentProgressBar.tsx    ← Animated pipeline timeline (Framer Motion)
+│   └── BudgetSlider.tsx        ← Dual-handle funding range slider (shadcn Slider)
 ├── investors/
-│   ├── InvestorCard.tsx        ← Single investor result card
+│   ├── InvestorCard.tsx        ← Rich card: avatar, check range, social links, fit ring
 │   ├── InvestorGrid.tsx        ← Paginated grid of results
 │   ├── FitScoreBadge.tsx       ← Colour-coded fit % badge
 │   ├── FitBreakdown.tsx        ← Expandable dimension scores
@@ -773,7 +841,24 @@ components/
 ├── saved/
 │   ├── SavedBoard.tsx          ← Kanban-style status board
 │   └── InvestorStatusPill.tsx
+├── layout/
+│   ├── Sidebar.tsx             ← Icon + label nav, user avatar, plan badge
+│   └── ThemeToggle.tsx         ← Dark/light mode toggle (next-themes)
+├── landing/
+│   ├── HeroSection.tsx         ← Gradient hero with animated CTA
+│   ├── HowItWorks.tsx          ← 4-step process visual
+│   ├── SocialProof.tsx         ← Founder quotes / logos
+│   └── PricingTeaser.tsx       ← Free vs Pro comparison strip
 └── ui/                         ← shadcn/ui component overrides
+    ├── slider.tsx              ← Budget range slider primitive
+    ├── badge.tsx               ← Sector/stage tag chips
+    ├── avatar.tsx              ← Investor logo placeholder
+    ├── tabs.tsx                ← Search results / saved views
+    ├── tooltip.tsx             ← Fit score dimension tooltips
+    ├── select.tsx              ← Stage / geo dropdown
+    ├── command.tsx             ← Multi-select sector combobox
+    ├── skeleton.tsx            ← Loading placeholders
+    └── sonner.tsx              ← Toast notifications
 ```
 
 ### 8.3 State Management
@@ -921,6 +1006,19 @@ NEXT_PUBLIC_POSTHOG_KEY=...
 | S5-005   | Posthog analytics events                       | Dev   | 1      |
 | S5-006   | QA — full end-to-end test suite                | QA    | 5      |
 
+### Epic 6: UI Enrichment (Sprint 6)
+
+| Story ID | Title                                                        | Agent  | Points |
+| -------- | ------------------------------------------------------------ | ------ | ------ |
+| S6-001   | shadcn/ui component library expansion + Framer Motion setup  | FE Dev | 2      |
+| S6-002   | Enriched landing page (hero, how-it-works, social proof)     | FE Dev | 3      |
+| S6-003   | Structured IdeaForm + budget slider + backend DTO change     | FE Dev | 5      |
+| S6-004   | Rich InvestorCard (avatar, check range, social links)        | FE Dev | 3      |
+| S6-005   | Enhanced Dashboard (stats bar, improved cards, empty state)  | FE Dev | 2      |
+| S6-006   | Animated agent pipeline timeline (Framer Motion stages)      | FE Dev | 3      |
+| S6-007   | App shell polish (sidebar icons, user avatar, mobile nav)    | FE Dev | 3      |
+| S6-008   | Dark mode toggle (next-themes, system-preference aware)      | FE Dev | 2      |
+
 ---
 
 ## 11. Non-Functional Requirements
@@ -983,6 +1081,16 @@ The following gates must pass before each phase transition:
 - [ ] Sentry receiving errors from both FE and BE
 - [ ] Load test: 50 concurrent searches complete without pipeline failures
 - [ ] GDPR deletion endpoint verified — removes all user data in < 5 seconds
+
+### Gate 5 (After Epic 6 — UI Enrichment complete)
+
+- [ ] Structured form submits all optional fields; backend stores them and passes to IdeaParser
+- [ ] IdeaParser correctly merges structured overrides with free-text extraction
+- [ ] Budget slider values reflected accurately in `budget_min` / `budget_max` on the search row
+- [ ] Dark mode renders without flash on load; persists across sessions; all components themed
+- [ ] Landing page renders correctly on mobile (375px), tablet (768px), and desktop (1440px)
+- [ ] Framer Motion animations run at 60 fps; `prefers-reduced-motion` disables them cleanly
+- [ ] All new shadcn components keyboard-accessible and pass axe-core scan with 0 violations
 
 ---
 

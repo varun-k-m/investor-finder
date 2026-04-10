@@ -2,6 +2,7 @@
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAppStore, type AgentStage } from '@/store/app.store';
+import { track } from '@/lib/posthog';
 
 export function useAgentStream(searchId: string | null) {
   const setAgentProgress = useAppStore((s) => s.setAgentProgress);
@@ -16,9 +17,15 @@ export function useAgentStream(searchId: string | null) {
       setAgentProgress(stage as AgentStage, progress ?? 0);
     });
 
-    es.addEventListener('complete', () => {
+    es.addEventListener('complete', (e) => {
       setAgentProgress('complete', 100);
       es.close();
+      try {
+        const { result_count } = JSON.parse(e.data) as { result_count?: number };
+        track('search_completed', { search_id: searchId, result_count: result_count ?? 0 });
+      } catch {
+        track('search_completed', { search_id: searchId });
+      }
       queryClient.invalidateQueries({ queryKey: ['search', searchId] });
     });
 

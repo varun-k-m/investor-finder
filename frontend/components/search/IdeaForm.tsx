@@ -2,12 +2,13 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { apiFetch } from '@/lib/api';
 import { useAppStore } from '@/store/app.store';
+import { track } from '@/lib/posthog';
 
 const MIN_LENGTH = 20;
 
@@ -19,9 +20,12 @@ interface CreateSearchResponse {
 export function IdeaForm() {
   const [input, setValue] = useState('');
   const [touched, setTouched] = useState(false);
+  const [quotaError, setQuotaError] = useState(false);
+  const [genericError, setGenericError] = useState<string | null>(null);
   const router = useRouter();
   const { getToken } = useAuth();
   const setCurrentSearchId = useAppStore((s) => s.setCurrentSearchId);
+  const queryClient = useQueryClient();
 
   const isValid = input.trim().length >= MIN_LENGTH;
   const showError = touched && !isValid;
@@ -33,8 +37,22 @@ export function IdeaForm() {
         body: JSON.stringify({ raw_input: input.trim() }),
       }),
     onSuccess: (data) => {
+      setQuotaError(false);
+      setGenericError(null);
       setCurrentSearchId(data.id);
+      track('search_started', { search_id: data.id });
       router.push(`/search/${data.id}`);
+    },
+    onError: (error: Error & { status?: number }) => {
+      if (error.status === 429 || error.message?.toLowerCase().includes('limit reached')) {
+        setQuotaError(true);
+        setGenericError(null);
+        // Refresh user-me so sidebar usage counter updates
+        void queryClient.invalidateQueries({ queryKey: ['user-me'] });
+      } else {
+        setQuotaError(false);
+        setGenericError(error.message ?? 'Something went wrong. Please try again.');
+      }
     },
   });
 
@@ -42,6 +60,8 @@ export function IdeaForm() {
     e.preventDefault();
     setTouched(true);
     if (!isValid) return;
+    setQuotaError(false);
+    setGenericError(null);
     mutation.mutate();
   };
 
@@ -71,10 +91,25 @@ export function IdeaForm() {
         </div>
       </div>
 
-      {mutation.isError && (
-        <p className="text-sm text-destructive">
-          {(mutation.error as Error).message ?? 'Something went wrong. Please try again.'}
-        </p>
+      {quotaError && (
+        <div className="rounded-md bg-amber-50 border border-amber-200 p-4 text-sm">
+          <p className="font-medium text-amber-800">Monthly limit reached</p>
+          <p className="text-amber-700 mt-1">
+            You&apos;ve used all 3 free searches this month.{' '}
+            <a
+              href="/pricing"
+              onClick={() => track('upgrade_clicked', { source: 'quota_error' })}
+              className="underline font-medium hover:text-amber-900"
+            >
+              Upgrade to Pro
+            </a>{' '}
+            for unlimited searches.
+          </p>
+        </div>
+      )}
+
+      {genericError && !quotaError && (
+        <p className="text-sm text-destructive">{genericError}</p>
       )}
 
       <Button

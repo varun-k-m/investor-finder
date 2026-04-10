@@ -28,6 +28,7 @@
     "@nestjs/swagger": "^7.4.0",
     "@nestjs/throttler": "^6.5.0",
     "@nestjs/typeorm": "^11.0.1",
+    "@sentry/nestjs": "^10.48.0",
     "axios": "^1.15.0",
     "bull": "^4.16.5",
     "class-transformer": "^0.5.1",
@@ -35,6 +36,7 @@
     "ioredis": "^5.10.1",
     "pg": "^8.20.0",
     "reflect-metadata": "^0.2.2",
+    "resend": "^6.10.0",
     "rxjs": "^7.8.1",
     "svix": "^1.90.0",
     "typeorm": "^0.3.28"

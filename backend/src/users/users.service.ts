@@ -17,6 +17,14 @@ export class UsersService {
     return this.usersRepository.incrementSearchesUsed(userId);
   }
 
+  async deleteByClerkId(clerkId: string): Promise<void> {
+    return this.usersRepository.deleteByClerkId(clerkId);
+  }
+
+  async getMonthlySearchCount(userId: string): Promise<number> {
+    return this.usersRepository.getMonthlySearchCount(userId);
+  }
+
   async getSavedInvestors(clerkId: string) {
     return this.usersRepository.getSavedInvestors(clerkId);
   }

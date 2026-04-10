@@ -10,6 +10,7 @@ import { AgentProgressStore } from '../searches/agent-progress.store';
 import { InvestorProfile } from '../investors/entities/investor-profile.entity';
 import { Search } from '../searches/entities/search.entity';
 import { ParsedIdea, RankedInvestor, SynthesisedInvestor } from '../common/types';
+import { EmailService } from '../email/email.service';
 
 const parsedIdea: ParsedIdea = {
   title: 'Test',
@@ -50,6 +51,11 @@ const mockRanked: RankedInvestor = {
   rank_position: 1,
 };
 
+const mockSearchRepo = () => ({
+  update: jest.fn().mockResolvedValue({}),
+  findOne: jest.fn().mockResolvedValue(null),
+});
+
 async function buildService(overrides: Partial<{
   crunchbase: object; webSearch: object; newsSignal: object;
   synthesis: object; ranking: object; investorRepo: object; searchRepo: object;
@@ -63,8 +69,9 @@ async function buildService(overrides: Partial<{
       { provide: SynthesisService, useValue: overrides.synthesis ?? { synthesise: jest.fn().mockResolvedValue([mockInvestor]) } },
       { provide: RankingService, useValue: overrides.ranking ?? { rank: jest.fn().mockResolvedValue([mockRanked]) } },
       { provide: getRepositoryToken(InvestorProfile), useValue: overrides.investorRepo ?? { create: jest.fn().mockReturnValue({}), save: jest.fn().mockResolvedValue([]) } },
-      { provide: getRepositoryToken(Search), useValue: overrides.searchRepo ?? { update: jest.fn().mockResolvedValue({}) } },
+      { provide: getRepositoryToken(Search), useValue: overrides.searchRepo ?? mockSearchRepo() },
       { provide: AgentProgressStore, useValue: { emit: jest.fn(), complete: jest.fn(), getOrCreate: jest.fn() } },
+      { provide: EmailService, useValue: { sendSearchCompleteEmail: jest.fn().mockResolvedValue(undefined) } },
     ],
   }).compile();
   return module.get(DiscoveryService);
@@ -72,7 +79,7 @@ async function buildService(overrides: Partial<{
 
 describe('DiscoveryService', () => {
   it('runs full pipeline: source → synthesise → rank → save → complete (AC: 1–6)', async () => {
-    const searchRepo = { update: jest.fn().mockResolvedValue({}) };
+    const searchRepo = { update: jest.fn().mockResolvedValue({}), findOne: jest.fn().mockResolvedValue(null) };
     const investorRepo = { create: jest.fn().mockReturnValue({}), save: jest.fn().mockResolvedValue([]) };
     const synthesis = { synthesise: jest.fn().mockResolvedValue([mockInvestor]) };
     const ranking = { rank: jest.fn().mockResolvedValue([mockRanked]) };
@@ -91,7 +98,7 @@ describe('DiscoveryService', () => {
 
   it('continues pipeline when one source fails (AC: 2)', async () => {
     const crunchbase = { search: jest.fn().mockRejectedValue(new Error('API down')) };
-    const searchRepo = { update: jest.fn().mockResolvedValue({}) };
+    const searchRepo = { update: jest.fn().mockResolvedValue({}), findOne: jest.fn().mockResolvedValue(null) };
     const investorRepo = { create: jest.fn().mockReturnValue({}), save: jest.fn().mockResolvedValue([]) };
 
     const service = await buildService({ crunchbase, searchRepo, investorRepo });
@@ -106,7 +113,7 @@ describe('DiscoveryService', () => {
 
   it('marks search as failed on unrecoverable error (AC: 7)', async () => {
     const synthesis = { synthesise: jest.fn().mockRejectedValue(new Error('Claude down')) };
-    const searchRepo = { update: jest.fn().mockResolvedValue({}) };
+    const searchRepo = { update: jest.fn().mockResolvedValue({}), findOne: jest.fn().mockResolvedValue(null) };
 
     const service = await buildService({ synthesis, searchRepo });
     await service.run('search-3', parsedIdea);

@@ -10,6 +10,7 @@ import { InvestorsModule } from './investors/investors.module';
 import { AgentsModule } from './agents/agents.module';
 import { DatabaseModule } from './database/database.module';
 import { UserThrottlerGuard } from './common/guards/throttler.guard';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { UserThrottlerGuard } from './common/guards/throttler.guard';
     InvestorsModule,
     AgentsModule,
     DatabaseModule,
+    EmailModule,
   ],
   providers: [
     // ClerkGuard registered first (in AuthModule) — ThrottlerGuard runs after auth

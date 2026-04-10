@@ -13,12 +13,14 @@ import { NewsSignalService } from './sources/news-signal.service';
 import { InvestorProfile } from '../investors/entities/investor-profile.entity';
 import { Search } from '../searches/entities/search.entity';
 import { AgentProgressStore } from '../searches/agent-progress.store';
+import { EmailModule } from '../email/email.module';
 
 /** [Source: docs/architecture.md#Section 7.5] */
 @Module({
   imports: [
     ConfigModule,
     TypeOrmModule.forFeature([InvestorProfile, Search]),
+    EmailModule,
   ],
   providers: [
     {
