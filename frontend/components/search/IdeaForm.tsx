@@ -9,33 +9,62 @@ import { Textarea } from '@/components/ui/textarea';
 import { apiFetch } from '@/lib/api';
 import { useAppStore } from '@/store/app.store';
 import { track } from '@/lib/posthog';
+import { MultiSelect } from './MultiSelect';
+import { BudgetSlider } from './BudgetSlider';
 
 const MIN_LENGTH = 20;
+
+const SECTORS = ['Fintech', 'SaaS', 'HealthTech', 'EdTech', 'CleanTech', 'Consumer', 'DeepTech', 'E-commerce', 'Marketplace', 'Web3', 'Other'];
+const STAGES = ['Pre-seed', 'Seed', 'Series A', 'Series B', 'Growth'];
+const GEOS = ['USA', 'Europe', 'UK', 'India', 'Southeast Asia', 'LATAM', 'Africa', 'Global'];
 
 interface CreateSearchResponse {
   id: string;
   status: string;
 }
 
+interface CreateSearchBody {
+  raw_input: string;
+  sectors?: string[];
+  stages?: string[];
+  geo_focus?: string[];
+  budget_min?: number;
+  budget_max?: number;
+}
+
 export function IdeaForm() {
-  const [input, setValue] = useState('');
+  const [description, setDescription] = useState('');
   const [touched, setTouched] = useState(false);
+  const [sectors, setSectors] = useState<string[]>([]);
+  const [stages, setStages] = useState<string[]>([]);
+  const [geoFocus, setGeoFocus] = useState<string[]>([]);
+  const [budget, setBudget] = useState<[number, number]>([0, 0]);
   const [quotaError, setQuotaError] = useState(false);
   const [genericError, setGenericError] = useState<string | null>(null);
+
   const router = useRouter();
   const { getToken } = useAuth();
   const setCurrentSearchId = useAppStore((s) => s.setCurrentSearchId);
   const queryClient = useQueryClient();
 
-  const isValid = input.trim().length >= MIN_LENGTH;
+  const isValid = description.trim().length >= MIN_LENGTH;
   const showError = touched && !isValid;
 
   const mutation = useMutation({
-    mutationFn: () =>
-      apiFetch<CreateSearchResponse>('/searches', getToken, {
+    mutationFn: () => {
+      const payload: CreateSearchBody = {
+        raw_input: description.trim(),
+        ...(sectors.length > 0 && { sectors }),
+        ...(stages.length > 0 && { stages }),
+        ...(geoFocus.length > 0 && { geo_focus: geoFocus }),
+        ...(budget[0] > 0 && { budget_min: budget[0] }),
+        ...(budget[1] > 0 && { budget_max: budget[1] }),
+      };
+      return apiFetch<CreateSearchResponse>('/searches', getToken, {
         method: 'POST',
-        body: JSON.stringify({ raw_input: input.trim() }),
-      }),
+        body: JSON.stringify(payload),
+      });
+    },
     onSuccess: (data) => {
       setQuotaError(false);
       setGenericError(null);
@@ -47,7 +76,6 @@ export function IdeaForm() {
       if (error.status === 429 || error.message?.toLowerCase().includes('limit reached')) {
         setQuotaError(true);
         setGenericError(null);
-        // Refresh user-me so sidebar usage counter updates
         void queryClient.invalidateQueries({ queryKey: ['user-me'] });
       } else {
         setQuotaError(false);
@@ -66,14 +94,16 @@ export function IdeaForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
+    <form onSubmit={handleSubmit} className="space-y-5">
+      {/* Description */}
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium">Describe your startup</label>
         <Textarea
           placeholder="Describe your startup idea, target market, and funding needs..."
-          value={input}
-          onChange={(e) => setValue(e.target.value)}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
           onBlur={() => setTouched(true)}
-          rows={6}
+          rows={5}
           className="resize-none"
           aria-invalid={showError}
         />
@@ -85,9 +115,48 @@ export function IdeaForm() {
               </span>
             )}
           </span>
-          <span>
-            {input.trim().length} / {MIN_LENGTH} min
-          </span>
+          <span>{description.trim().length} / {MIN_LENGTH} min</span>
+        </div>
+      </div>
+
+      {/* Sectors */}
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium">Sectors <span className="text-muted-foreground font-normal">(optional)</span></label>
+        <MultiSelect
+          options={SECTORS}
+          value={sectors}
+          onChange={setSectors}
+          placeholder="Select sectors (optional)"
+        />
+      </div>
+
+      {/* Stage */}
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium">Stage <span className="text-muted-foreground font-normal">(optional)</span></label>
+        <MultiSelect
+          options={STAGES}
+          value={stages}
+          onChange={setStages}
+          placeholder="Select stages (optional)"
+        />
+      </div>
+
+      {/* Geography */}
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium">Geography <span className="text-muted-foreground font-normal">(optional)</span></label>
+        <MultiSelect
+          options={GEOS}
+          value={geoFocus}
+          onChange={setGeoFocus}
+          placeholder="Select geographies (optional)"
+        />
+      </div>
+
+      {/* Budget */}
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium">Check size range <span className="text-muted-foreground font-normal">(optional)</span></label>
+        <div className="px-1 pt-1">
+          <BudgetSlider value={budget} onChange={setBudget} />
         </div>
       </div>
 

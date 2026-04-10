@@ -3,13 +3,19 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useAuth } from '@clerk/nextjs';
+import { Linkedin, Twitter, ExternalLink, DollarSign } from 'lucide-react';
 import type { InvestorProfile } from '@/types/investor';
-import { FitScoreBadge } from './FitScoreBadge';
+import { FitScoreRing } from './FitScoreRing';
 import { FitBreakdown } from './FitBreakdown';
 import { PitchModal } from './PitchModal';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { apiFetch } from '@/lib/api';
 import { track } from '@/lib/posthog';
+import { formatBudget, investorInitials, avatarColor } from '@/lib/format';
+import { cn } from '@/lib/utils';
 
 interface SaveResponse {
   id: string;
@@ -25,81 +31,170 @@ export function InvestorCard({ investor }: { investor: InvestorProfile }) {
 
   const saveMutation = useMutation({
     mutationFn: () =>
-      apiFetch<SaveResponse>(`/investors/${investor.id}/save`, getToken, {
-        method: 'POST',
-      }),
+      apiFetch<SaveResponse>(`/investors/${investor.id}/save`, getToken, { method: 'POST' }),
     onSuccess: () => {
       setSaved(true);
       track('investor_saved', { investor_id: investor.id, investor_name: investor.canonical_name });
     },
   });
 
+  const initials = investorInitials(investor.canonical_name);
+  const bgColor = avatarColor(investor.canonical_name);
+
+  const fitTooltip = [
+    investor.sector_fit != null && `Sector: ${Math.round(investor.sector_fit)}`,
+    investor.stage_fit != null && `Stage: ${Math.round(investor.stage_fit)}`,
+    investor.budget_fit != null && `Budget: ${Math.round(investor.budget_fit)}`,
+    investor.geo_fit != null && `Geo: ${Math.round(investor.geo_fit)}`,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
   return (
-    <div className="rounded-lg border border-border bg-card p-5 space-y-3">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-2">
-        <div className="space-y-0.5">
-          <h3 className="font-semibold text-base leading-tight">{investor.canonical_name}</h3>
-          {investor.fund_name && (
-            <p className="text-sm text-muted-foreground">{investor.fund_name}</p>
+    <TooltipProvider>
+      <div className="rounded-lg border border-border bg-card p-5 space-y-3 hover:border-primary/40 transition-colors">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <Avatar className="h-10 w-10 shrink-0">
+              <AvatarFallback className={cn('text-white text-sm font-semibold', bgColor)}>
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0">
+              <h3 className="font-semibold text-base leading-tight truncate">
+                {investor.canonical_name}
+              </h3>
+              {investor.fund_name && (
+                <p className="text-sm text-muted-foreground truncate">{investor.fund_name}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Fit score ring with tooltip */}
+          {investor.fit_score !== null && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="cursor-default">
+                  <FitScoreRing score={investor.fit_score} />
+                </div>
+              </TooltipTrigger>
+              {fitTooltip && (
+                <TooltipContent side="left" className="text-xs">
+                  {fitTooltip}
+                </TooltipContent>
+              )}
+            </Tooltip>
           )}
         </div>
-        <FitScoreBadge score={investor.fit_score} />
-      </div>
 
-      {/* Sector tags */}
-      {investor.sectors && investor.sectors.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {investor.sectors.map((s) => (
-            <span
-              key={s}
-              className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-muted text-muted-foreground"
-            >
-              {s}
+        {/* Sector + stage tags */}
+        {((investor.sectors && investor.sectors.length > 0) ||
+          (investor.stages && investor.stages.length > 0)) && (
+          <div className="flex flex-wrap gap-1.5">
+            {investor.sectors?.map((s) => (
+              <Badge key={s} variant="secondary" className="text-xs">
+                {s}
+              </Badge>
+            ))}
+            {investor.stages?.map((s) => (
+              <Badge key={s} variant="outline" className="text-xs">
+                {s}
+              </Badge>
+            ))}
+          </div>
+        )}
+
+        {/* Check range + geo */}
+        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+          {investor.check_min !== null && investor.check_max !== null && (
+            <span className="inline-flex items-center gap-1">
+              <DollarSign className="h-3 w-3" />
+              {formatBudget(investor.check_min)} – {formatBudget(investor.check_max)}
             </span>
-          ))}
+          )}
+          {investor.geo_focus && investor.geo_focus.length > 0 && (
+            <span>🌍 {investor.geo_focus.slice(0, 3).join(', ')}</span>
+          )}
         </div>
-      )}
 
-      {/* Fit Details toggle */}
-      <button
-        type="button"
-        onClick={() => setShowBreakdown((b) => !b)}
-        className="text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline transition-colors"
-      >
-        {showBreakdown ? 'Hide' : 'Show'} Fit Details
-      </button>
-
-      <FitBreakdown investor={investor} open={showBreakdown} />
-
-      {/* Actions */}
-      <div className="flex gap-2 pt-1">
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => saveMutation.mutate()}
-          disabled={saved || saveMutation.isPending}
+        {/* Fit Details toggle */}
+        <button
+          type="button"
+          onClick={() => setShowBreakdown((b) => !b)}
+          className="text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline transition-colors"
         >
-          {saved ? 'Saved' : saveMutation.isPending ? 'Saving...' : 'Save'}
-        </Button>
+          {showBreakdown ? '▴ Hide' : '▾ Show'} Fit Details
+        </button>
 
-        <Button size="sm" variant="outline" onClick={() => setShowPitch(true)}>
-          Generate Pitch
-        </Button>
+        <FitBreakdown investor={investor} open={showBreakdown} />
+
+        {/* Actions */}
+        <div className="flex items-center gap-2 pt-1">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => saveMutation.mutate()}
+            disabled={saved || saveMutation.isPending}
+          >
+            {saved ? 'Saved ✓' : saveMutation.isPending ? 'Saving...' : 'Save'}
+          </Button>
+
+          <Button size="sm" variant="outline" onClick={() => setShowPitch(true)}>
+            Generate Pitch
+          </Button>
+
+          {/* Social links */}
+          <div className="flex items-center gap-1.5 ml-auto">
+            {investor.linkedin_url && (
+              <a
+                href={investor.linkedin_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="LinkedIn"
+              >
+                <Linkedin className="h-4 w-4" />
+              </a>
+            )}
+            {investor.twitter_url && (
+              <a
+                href={investor.twitter_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Twitter"
+              >
+                <Twitter className="h-4 w-4" />
+              </a>
+            )}
+            {investor.website && (
+              <a
+                href={investor.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Website"
+              >
+                <ExternalLink className="h-4 w-4" />
+              </a>
+            )}
+          </div>
+        </div>
+
+        {saveMutation.isError && (
+          <p className="text-xs text-destructive">
+            {(saveMutation.error as Error).message}
+          </p>
+        )}
+
+        <PitchModal
+          investorId={investor.id}
+          investorName={investor.canonical_name}
+          open={showPitch}
+          onClose={() => setShowPitch(false)}
+        />
       </div>
-
-      {saveMutation.isError && (
-        <p className="text-xs text-destructive">
-          {(saveMutation.error as Error).message}
-        </p>
-      )}
-
-      <PitchModal
-        investorId={investor.id}
-        investorName={investor.canonical_name}
-        open={showPitch}
-        onClose={() => setShowPitch(false)}
-      />
-    </div>
+    </TooltipProvider>
   );
 }

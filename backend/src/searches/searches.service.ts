@@ -42,10 +42,25 @@ export class SearchesService {
     if (!user) throw new UnauthorizedException();
 
     const search = await this.searchRepo.save(
-      this.searchRepo.create({ user_id: user.id, raw_input: dto.raw_input, status: 'pending' }),
+      this.searchRepo.create({
+        user_id: user.id,
+        raw_input: dto.raw_input,
+        status: 'pending',
+        sectors: dto.sectors ?? null,
+        stages: dto.stages ?? null,
+        geo_focus: dto.geo_focus ?? null,
+        budget_min: dto.budget_min ?? null,
+        budget_max: dto.budget_max ?? null,
+      }),
     );
 
-    const parsedIdea = await this.ideaParser.parse(dto.raw_input);
+    const parsedIdea = await this.ideaParser.parse(dto.raw_input, {
+      sectors: dto.sectors,
+      stages: dto.stages,
+      geo_focus: dto.geo_focus,
+      budget_min: dto.budget_min,
+      budget_max: dto.budget_max,
+    });
     await this.searchRepo.update(
       { id: search.id },
       { parsed_idea: parsedIdea as unknown as Record<string, unknown>, status: 'running' },

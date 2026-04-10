@@ -27,6 +27,21 @@ export class Search {
   @Column({ type: 'text' })
   raw_input: string;
 
+  @Column({ type: 'simple-array', nullable: true })
+  sectors: string[] | null;
+
+  @Column({ type: 'simple-array', nullable: true })
+  stages: string[] | null;
+
+  @Column({ type: 'simple-array', nullable: true })
+  geo_focus: string[] | null;
+
+  @Column({ type: 'int', nullable: true })
+  budget_min: number | null;
+
+  @Column({ type: 'int', nullable: true })
+  budget_max: number | null;
+
   @Column({ type: 'jsonb', nullable: true })
   parsed_idea: Record<string, unknown> | null;
 

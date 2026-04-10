@@ -31,12 +31,26 @@ export class IdeaParserService {
     private readonly anthropic: Anthropic,
   ) {}
 
-  async parse(rawInput: string): Promise<ParsedIdea> {
+  async parse(
+    rawInput: string,
+    structured?: {
+      sectors?: string[];
+      stages?: string[];
+      geo_focus?: string[];
+      budget_min?: number;
+      budget_max?: number;
+    },
+  ): Promise<ParsedIdea> {
+    const hasOverrides = structured && Object.values(structured).some((v) => v !== undefined);
+    const userMessage = hasOverrides
+      ? `STRUCTURED_OVERRIDES: ${JSON.stringify(structured)}\n\nFOUNDER DESCRIPTION:\n${rawInput}`
+      : rawInput;
+
     const response = await this.anthropic.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 800,
       system: IDEA_PARSER_SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: rawInput }],
+      messages: [{ role: 'user', content: userMessage }],
     });
 
     const text = (response.content[0] as { type: string; text: string }).text;
