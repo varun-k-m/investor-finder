@@ -2,30 +2,32 @@ import { Injectable, Inject, Logger } from '@nestjs/common';
 import Anthropic from '@anthropic-ai/sdk';
 import { ParsedIdea, SynthesisedInvestor } from '../common/types';
 
-const SYNTHESIS_SYSTEM_PROMPT = `You are an expert at identifying and extracting investor profiles from raw web data.
+const SYNTHESIS_SYSTEM_PROMPT = `You are an expert at extracting investor profiles from web search results.
 
-You will receive raw records from web searches. Each record has:
-- canonical_name: the page title (may be an article title, not an investor name)
-- website / source_urls: the source URL
-- raw_text: the actual page content — THIS is where investor information lives
-- sectors/stages/etc: may be empty — extract these from raw_text if available
+You will receive an array of raw search result records. Each record has:
+- canonical_name: the web page title (often an article headline or firm name)
+- source_urls: where the content came from
+- raw_text: a snippet of the page content
+- sectors/stages/geo_focus: may be empty arrays — extract from raw_text if possible
 
-Your job:
-1. EXTRACT: From each record's raw_text (and canonical_name/URL), identify real investors mentioned (venture capital firms, angel investors, family offices, corporate VCs). Ignore list articles, news sites, and non-investor pages.
-2. NORMALISE: For each real investor found, produce one canonical object.
-3. DEDUPLICATE: Merge records referring to the same investor (same name, domain, or clearly the same entity).
-4. EXTRACT FIELDS from raw_text where possible: sectors they invest in, stages (pre-seed/seed/series-a/etc), geography focus, check sizes, website.
+IMPORTANT: Many records will be from articles like "Top 10 VC firms in fintech" or "Best angel investors for SaaS". These are VALUABLE — extract every investor name mentioned in them.
 
-Canonical schema per investor (output only these fields):
+Your task:
+1. Read every record's canonical_name and raw_text carefully
+2. Identify every venture capital firm, angel investor, family office, or institutional investor MENTIONED anywhere in the content
+3. For each investor found, create one canonical profile extracting all available details
+4. Deduplicate: if the same firm appears in multiple records, merge into one entry
+
+For each investor produce exactly this JSON shape:
 {
-  "canonical_name": string,        // formal name e.g. "Sequoia Capital"
-  "fund_name": string | null,      // fund name if different from firm name
-  "website": string | null,        // investor's own website
-  "sectors": string[],             // e.g. ["fintech", "saas"]
-  "stages": string[],              // e.g. ["seed", "series-a"]
-  "geo_focus": string[],           // e.g. ["US", "Southeast Asia"]
-  "check_min": number | null,      // minimum check size in USD
-  "check_max": number | null,      // maximum check size in USD
+  "canonical_name": string,
+  "fund_name": string | null,
+  "website": string | null,
+  "sectors": string[],
+  "stages": string[],
+  "geo_focus": string[],
+  "check_min": number | null,
+  "check_max": number | null,
   "contact_email": string | null,
   "linkedin_url": string | null,
   "sources": string[],
@@ -33,7 +35,13 @@ Canonical schema per investor (output only these fields):
   "conflicts": string[]
 }
 
-Return ONLY a valid JSON array. No preamble, no markdown fences. Return [] only if zero real investors can be identified.
+Rules:
+- Extract investor names even if only briefly mentioned ("Sequoia led the round" → include Sequoia Capital)
+- For website: use the investor's own domain, not the article URL
+- For stages: use lowercase strings like "pre-seed", "seed", "series-a", "series-b", "growth"
+- If a field cannot be determined, use null or []
+- Return ONLY a raw JSON array — no markdown, no explanation, no preamble
+
 Input records:
 {{RAW_RECORDS}}`;
 
@@ -72,6 +80,8 @@ export class SynthesisService {
     });
 
     const text = (response.content[0] as { type: string; text: string }).text;
+    this.logger.log(`SynthesisService: Claude raw response (first 300 chars): ${text.slice(0, 300)}`);
+
     const cleaned = text
       .replace(/^```json\n?/, '')
       .replace(/^```\n?/, '')
@@ -80,9 +90,11 @@ export class SynthesisService {
 
     try {
       const result = JSON.parse(cleaned) as SynthesisedInvestor[];
+      this.logger.log(`SynthesisService: parsed ${result.length} investors from Claude`);
       return result.slice(0, 30);
     } catch (err) {
       this.logger.error('SynthesisService: failed to parse Claude response — returning raw records', err);
+      this.logger.error(`SynthesisService: cleaned text (first 500): ${cleaned.slice(0, 500)}`);
       return rawRecords;
     }
   }

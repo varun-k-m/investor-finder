@@ -80,6 +80,7 @@ export class NewsSignalService {
       sources: ['news'],
       source_urls: [result.url],
       conflicts: [],
+      raw_text: result.content ?? undefined,
     };
   }
 }
