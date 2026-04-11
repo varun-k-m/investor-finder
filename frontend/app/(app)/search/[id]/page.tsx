@@ -31,7 +31,12 @@ export default function SearchResultsPage({ params }: { params: { id: string } }
 
   const isSearchRunning = data?.status === 'pending' || data?.status === 'running';
 
-  useAgentStream(isSearchRunning ? id : null);
+  // Connect SSE immediately (don't wait for HTTP poll to confirm 'running').
+  // The stream endpoint handles already-complete searches gracefully, and
+  // connecting early avoids missing the 'searching' event which fires right
+  // after the worker starts — often before the first 2-second poll returns.
+  const isAlreadyDone = data?.status === 'complete' || data?.status === 'failed';
+  useAgentStream(!isAlreadyDone ? id : null);
 
   return (
     <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-6">

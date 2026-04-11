@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Subject } from 'rxjs';
+import { ReplaySubject } from 'rxjs';
 import { AgentStage, AgentUpdateEvent } from '../common/types';
 
 interface ProgressEvent {
@@ -12,18 +12,22 @@ interface ProgressEvent {
 @Injectable()
 export class AgentProgressStore {
   private readonly logger = new Logger(AgentProgressStore.name);
-  private readonly subjects = new Map<string, Subject<ProgressEvent>>();
+  // ReplaySubject(1) buffers the latest event so late SSE subscribers
+  // immediately receive the current stage instead of seeing nothing.
+  private readonly subjects = new Map<string, ReplaySubject<ProgressEvent>>();
 
-  getOrCreate(searchId: string): Subject<ProgressEvent> {
+  getOrCreate(searchId: string): ReplaySubject<ProgressEvent> {
     if (!this.subjects.has(searchId)) {
-      this.subjects.set(searchId, new Subject<ProgressEvent>());
+      this.subjects.set(searchId, new ReplaySubject<ProgressEvent>(1));
     }
     return this.subjects.get(searchId)!;
   }
 
   emit(searchId: string, stage: AgentStage, progress: number): void {
-    const subject = this.subjects.get(searchId);
-    if (subject && !subject.closed) {
+    // Use getOrCreate so the subject exists even before an SSE client connects;
+    // the ReplaySubject will buffer this event and deliver it on subscription.
+    const subject = this.getOrCreate(searchId);
+    if (!subject.closed) {
       subject.next({ type: 'agent_update', stage, progress });
     }
   }
