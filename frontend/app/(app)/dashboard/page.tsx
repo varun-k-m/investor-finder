@@ -122,7 +122,11 @@ function DashboardContent() {
             {data.map((search) => (
               <Link
                 key={search.id}
-                href={`/search/${search.id}`}
+                href={
+                  search.status === 'complete'
+                    ? `/search/${search.id}/investors`
+                    : `/search/${search.id}`
+                }
                 className="block rounded-lg border border-border bg-card p-4 hover:border-primary/50 hover:shadow-sm transition-all space-y-3"
               >
                 {/* Status + date */}

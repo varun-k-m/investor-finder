@@ -6,10 +6,13 @@ import { track } from '@/lib/posthog';
 
 export function useAgentStream(searchId: string | null) {
   const setAgentProgress = useAppStore((s) => s.setAgentProgress);
+  const resetAgentProgress = useAppStore((s) => s.resetAgentProgress);
   const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!searchId) return;
+    // Clear any stale stage/progress from a previous search before connecting
+    resetAgentProgress();
     const es = new EventSource(`/api/v1/searches/${searchId}/stream`);
 
     es.addEventListener('agent_update', (e) => {
@@ -32,5 +35,5 @@ export function useAgentStream(searchId: string | null) {
     es.onerror = () => es.close();
 
     return () => es.close();
-  }, [searchId, setAgentProgress, queryClient]);
+  }, [searchId, setAgentProgress, resetAgentProgress, queryClient]);
 }

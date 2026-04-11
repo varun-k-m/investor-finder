@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type AgentStage = 'parsing' | 'searching' | 'synthesis' | 'complete';
+export type AgentStage = 'searching' | 'synthesis' | 'ranking' | 'complete' | 'failed';
 
 interface AppStore {
   currentSearchId: string | null;
@@ -8,6 +8,7 @@ interface AppStore {
   agentProgress: number;
   setCurrentSearchId: (id: string | null) => void;
   setAgentProgress: (stage: AgentStage, pct: number) => void;
+  resetAgentProgress: () => void;
 }
 
 export const useAppStore = create<AppStore>((set) => ({
@@ -16,4 +17,5 @@ export const useAppStore = create<AppStore>((set) => ({
   agentProgress: 0,
   setCurrentSearchId: (id) => set({ currentSearchId: id }),
   setAgentProgress: (stage, pct) => set({ agentStage: stage, agentProgress: pct }),
+  resetAgentProgress: () => set({ agentStage: null, agentProgress: 0 }),
 }));

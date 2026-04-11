@@ -1,7 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@clerk/nextjs';
+import { ArrowLeft } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import { useAgentStream } from '@/hooks/useAgentStream';
 import { AgentProgressBar } from '@/components/search/AgentProgressBar';
@@ -18,7 +20,7 @@ export default function SearchResultsPage({ params }: { params: { id: string } }
   const { id } = params;
   const { getToken } = useAuth();
 
-  const { data } = useQuery({
+  const { data, isPending } = useQuery({
     queryKey: ['search', id],
     queryFn: () => apiFetch<SearchResult>(`/searches/${id}`, getToken),
     refetchInterval: (query) =>
@@ -27,28 +29,56 @@ export default function SearchResultsPage({ params }: { params: { id: string } }
         : 2000,
   });
 
-  useAgentStream(
-    data?.status === 'pending' || data?.status === 'running' ? id : null,
-  );
+  const isSearchRunning = data?.status === 'pending' || data?.status === 'running';
 
-  const isRunning = !data || data.status === 'pending' || data.status === 'running';
+  useAgentStream(isSearchRunning ? id : null);
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
-      <h1 className="text-2xl font-semibold mb-6">Search Results</h1>
-      <p className="text-muted-foreground text-sm mb-6">Search ID: {id}</p>
+    <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="flex items-start gap-3">
+        <Link
+          href="/dashboard"
+          className="mt-0.5 shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+          aria-label="Back to dashboard"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Link>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl font-semibold">
+            {isPending ? (
+              <span className="inline-block animate-pulse bg-muted rounded h-6 w-48" />
+            ) : (
+              isSearchRunning ? 'Searching for investors…' : 'Search Results'
+            )}
+          </h1>
+          {data?.raw_input && (
+            <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">{data.raw_input}</p>
+          )}
+        </div>
+      </div>
 
-      {isRunning && (
-        <div className="mb-8">
+      {/* Initial skeleton while fetching search metadata */}
+      {isPending && (
+        <div className="space-y-4">
+          <div className="animate-pulse bg-muted rounded-lg h-24 w-full" />
+        </div>
+      )}
+
+      {/* Progress bar — only when we have data and search is still running */}
+      {!isPending && isSearchRunning && (
+        <div className="rounded-lg border border-border bg-card p-6">
           <AgentProgressBar />
         </div>
       )}
 
+      {/* Results */}
       {data?.status === 'complete' && <InvestorGrid searchId={id} />}
 
+      {/* Error */}
       {data?.status === 'failed' && (
-        <div className="text-destructive text-sm">
-          Search failed. Please try again.
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+          Search failed. Please try again from the dashboard.
         </div>
       )}
     </div>
