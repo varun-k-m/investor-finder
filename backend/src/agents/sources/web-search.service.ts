@@ -25,10 +25,16 @@ export class WebSearchService {
       return [];
     }
 
+    const sector = parsedIdea.sector?.[0] ?? '';
+    const geo = parsedIdea.geography ?? '';
+    const keywords = (parsedIdea.keywords ?? []).slice(0, 3).join(' ');
+
     const queries = [
-      `${parsedIdea.sector?.[0] ?? ''} ${parsedIdea.stage ?? ''} investor ${parsedIdea.geography ?? ''}`.trim(),
-      `venture capital ${parsedIdea.sub_sector ?? parsedIdea.sector?.[0] ?? ''} fund 2024 2025`,
-      `angel investor ${(parsedIdea.keywords ?? []).slice(0, 3).join(' ')}`,
+      `${sector} ${parsedIdea.stage ?? ''} investor ${geo}`.trim(),
+      `venture capital ${parsedIdea.sub_sector ?? sector} fund 2024 2025`,
+      `angel investor ${keywords}`,
+      `site:linkedin.com/in "${sector}" "venture capital" OR "angel investor" ${geo}`.trim(),
+      `site:linkedin.com/in ${keywords} investor`,
     ];
 
     try {
@@ -57,24 +63,35 @@ export class WebSearchService {
     return (response.data.results ?? []).map((r) => this.mapResult(r));
   }
 
+  private isLinkedInProfile(url: string): boolean {
+    try {
+      const { hostname, pathname } = new URL(url);
+      return hostname.includes('linkedin.com') && pathname.startsWith('/in/');
+    } catch {
+      return false;
+    }
+  }
+
   private mapResult(result: TavilyResult): SynthesisedInvestor {
     const name = result.title
       .split(/[|–\-]/)[0]
       .trim()
       .replace(/\s+/g, ' ') || 'Unknown';
 
+    const isLinkedIn = this.isLinkedInProfile(result.url);
+
     return {
       canonical_name: name,
       fund_name: null,
-      website: result.url,
+      website: isLinkedIn ? null : result.url,
       sectors: [],
       stages: [],
       geo_focus: [],
       check_min: null,
       check_max: null,
       contact_email: null,
-      linkedin_url: null,
-      sources: ['web'],
+      linkedin_url: isLinkedIn ? result.url : null,
+      sources: [isLinkedIn ? 'linkedin' : 'web'],
       source_urls: [result.url],
       conflicts: [],
       raw_text: result.content ?? undefined,
@@ -84,11 +101,16 @@ export class WebSearchService {
   private deduplicateByDomain(investors: SynthesisedInvestor[]): SynthesisedInvestor[] {
     const seen = new Set<string>();
     return investors.filter((inv) => {
-      if (!inv.website) return true;
+      // LinkedIn profiles share a hostname — deduplicate by full profile URL instead
+      const dedupeUrl = inv.linkedin_url ?? inv.website;
+      if (!dedupeUrl) return true;
       try {
-        const domain = new URL(inv.website).hostname.replace(/^www\./, '');
-        if (seen.has(domain)) return false;
-        seen.add(domain);
+        const { hostname, pathname } = new URL(dedupeUrl);
+        const key = hostname.includes('linkedin.com')
+          ? `linkedin:${pathname.replace(/\/$/, '').toLowerCase()}`
+          : hostname.replace(/^www\./, '');
+        if (seen.has(key)) return false;
+        seen.add(key);
         return true;
       } catch {
         return true;
