@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@clerk/nextjs';
 import type { InvestorProfile } from '@/types/investor';
+import type { SavedInvestor } from '@/types/saved-investor';
 import { InvestorCard } from './InvestorCard';
 import { Button } from '@/components/ui/button';
 import { apiFetch } from '@/lib/api';
@@ -29,6 +30,16 @@ export function InvestorGrid({ searchId }: { searchId: string }) {
         getToken,
       ),
   });
+
+  const { data: savedData } = useQuery({
+    queryKey: ['saved'],
+    queryFn: () => apiFetch<SavedInvestor[]>('/users/me/saved', getToken),
+    staleTime: 30 * 1000,
+  });
+
+  const savedByInvestorId = new Map(
+    savedData?.map((s) => [s.investor_id, s.status]) ?? [],
+  );
 
   if (isPending) {
     return (
@@ -62,7 +73,11 @@ export function InvestorGrid({ searchId }: { searchId: string }) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {investors.map((investor) => (
-          <InvestorCard key={investor.id} investor={investor} />
+          <InvestorCard
+            key={investor.id}
+            investor={investor}
+            initialStatus={savedByInvestorId.get(investor.id)}
+          />
         ))}
       </div>
 

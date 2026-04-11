@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@clerk/nextjs';
 import { Loader2, DollarSign, Linkedin, Twitter, ExternalLink, GripVertical } from 'lucide-react';
 import type { SavedInvestor, InvestorStatus } from '@/types/saved-investor';
+import type { SearchSummary } from '@/types/search';
 import { INVESTOR_STATUSES } from '@/types/saved-investor';
 import { FitScoreBadge } from '@/components/investors/FitScoreBadge';
 import { FitScoreRing } from '@/components/investors/FitScoreRing';
@@ -214,6 +215,19 @@ export function SavedBoard() {
     queryFn: () => apiFetch<SavedInvestor[]>('/users/me/saved', getToken),
   });
 
+  const { data: searchesData } = useQuery({
+    queryKey: ['searches'],
+    queryFn: () => apiFetch<SearchSummary[]>('/searches', getToken),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const searchLabelById = new Map(
+    searchesData?.map((s) => [
+      s.id,
+      s.raw_input.length > 40 ? s.raw_input.slice(0, 40).trimEnd() + '…' : s.raw_input,
+    ]) ?? [],
+  );
+
   const statusMutation = useMutation({
     mutationFn: ({ investorId, status }: { investorId: string; status: InvestorStatus }) =>
       apiFetch(`/investors/${investorId}/status`, getToken, {
@@ -390,6 +404,11 @@ export function SavedBoard() {
                               {item.investor.sectors && item.investor.sectors.length > 0 && (
                                 <p className="text-xs text-muted-foreground truncate mt-1">
                                   {item.investor.sectors.slice(0, 2).join(' · ')}
+                                </p>
+                              )}
+                              {searchLabelById.get(item.investor.search_id) && (
+                                <p className="text-xs text-muted-foreground/60 truncate mt-1 italic">
+                                  {searchLabelById.get(item.investor.search_id)}
                                 </p>
                               )}
                             </div>

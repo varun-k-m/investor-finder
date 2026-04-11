@@ -16,6 +16,14 @@ import { apiFetch } from '@/lib/api';
 import { track } from '@/lib/posthog';
 import { formatBudget, investorInitials, avatarColor } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import type { InvestorStatus } from '@/types/saved-investor';
+
+const STATUS_LABELS: Record<InvestorStatus, string> = {
+  saved: 'Saved ✓',
+  contacted: 'Contacted ✓',
+  replied: 'Replied ✓',
+  passed: 'Passed',
+};
 
 interface SaveResponse {
   id: string;
@@ -23,8 +31,15 @@ interface SaveResponse {
   status: string;
 }
 
-export function InvestorCard({ investor }: { investor: InvestorProfile }) {
-  const [saved, setSaved] = useState(false);
+export function InvestorCard({
+  investor,
+  initialStatus,
+}: {
+  investor: InvestorProfile;
+  initialStatus?: InvestorStatus;
+}) {
+  const [saved, setSaved] = useState(!!initialStatus);
+  const [savedStatus, setSavedStatus] = useState<InvestorStatus | undefined>(initialStatus);
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [showPitch, setShowPitch] = useState(false);
   const { getToken } = useAuth();
@@ -34,6 +49,7 @@ export function InvestorCard({ investor }: { investor: InvestorProfile }) {
       apiFetch<SaveResponse>(`/investors/${investor.id}/save`, getToken, { method: 'POST' }),
     onSuccess: () => {
       setSaved(true);
+      setSavedStatus('saved');
       track('investor_saved', { investor_id: investor.id, investor_name: investor.canonical_name });
     },
   });
@@ -137,7 +153,11 @@ export function InvestorCard({ investor }: { investor: InvestorProfile }) {
             onClick={() => saveMutation.mutate()}
             disabled={saved || saveMutation.isPending}
           >
-            {saved ? 'Saved ✓' : saveMutation.isPending ? 'Saving...' : 'Save'}
+            {saved && savedStatus
+              ? STATUS_LABELS[savedStatus]
+              : saveMutation.isPending
+                ? 'Saving...'
+                : 'Save'}
           </Button>
 
           <Button size="sm" variant="outline" onClick={() => setShowPitch(true)}>

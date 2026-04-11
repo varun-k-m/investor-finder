@@ -52,7 +52,7 @@ function SidebarContent({
 
       <nav className="flex-1 px-2 py-4 space-y-1">
         {NAV.map(({ label, href, icon: Icon }) => {
-          const active = pathname === href || (href !== '/dashboard' && pathname.startsWith(href));
+          const active = pathname === href || (href !== '/dashboard' && href !== '/search' && pathname.startsWith(href));
           return (
             <Link
               key={href}
