@@ -61,10 +61,12 @@ export class SynthesisService {
     // Trim to 50 most unique by domain to avoid context overflow
     const trimmed = this.trimByDomain(rawRecords, 50);
 
-    // Truncate raw_text per record to keep total prompt manageable
+    // Truncate raw_text per record to keep total prompt manageable.
+    // 2 000 chars gives Claude enough context to extract sectors, stages,
+    // check sizes and thesis from raw_content pages without blowing the prompt.
     const truncated = trimmed.map((r) => ({
       ...r,
-      raw_text: r.raw_text ? r.raw_text.slice(0, 800) : undefined,
+      raw_text: r.raw_text ? r.raw_text.slice(0, 2000) : undefined,
     }));
 
     const systemPrompt = SYNTHESIS_SYSTEM_PROMPT.replace(

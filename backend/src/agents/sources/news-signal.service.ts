@@ -9,6 +9,7 @@ interface TavilyResult {
   title: string;
   url: string;
   content: string;
+  raw_content?: string;
 }
 
 /** [Source: docs/architecture.md#Section 6.2 — news signal source agent] */
@@ -25,9 +26,16 @@ export class NewsSignalService {
       return [];
     }
 
+    const sector = parsedIdea.sector?.[0] ?? '';
+    const subSector = parsedIdea.sub_sector ?? sector;
+    const geo = parsedIdea.geography ?? '';
+    const stage = parsedIdea.stage ?? '';
+
+    // Q1: Deal news — names the lead investor alongside stage + geo context.
+    // Q2: Fund news — closings and raises reveal which funds are actively deploying.
     const queries = [
-      `${parsedIdea.sector?.[0] ?? ''} investor funding 2024 2025`.trim(),
-      `venture capital ${parsedIdea.sub_sector ?? parsedIdea.sector?.[0] ?? ''} deal`.trim(),
+      `${sector} startup funding round ${stage} ${geo} lead investor 2024 2025`.trim(),
+      `venture capital ${subSector} ${geo} fund raised closed 2024 2025`.trim(),
     ];
 
     try {
@@ -60,6 +68,7 @@ export class NewsSignalService {
       search_depth: 'basic',
       topic: 'news',
       max_results: 8,
+      include_raw_content: true,
     });
     return (response.data.results ?? []).map((r) => this.mapResult(r));
   }
@@ -80,7 +89,7 @@ export class NewsSignalService {
       sources: ['news'],
       source_urls: [result.url],
       conflicts: [],
-      raw_text: result.content ?? undefined,
+      raw_text: result.raw_content ?? result.content ?? undefined,
     };
   }
 }

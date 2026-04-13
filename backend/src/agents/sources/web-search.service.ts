@@ -9,6 +9,7 @@ interface TavilyResult {
   title: string;
   url: string;
   content: string;
+  raw_content?: string;
 }
 
 /** [Source: docs/architecture.md#Section 6.3b] */
@@ -25,16 +26,25 @@ export class WebSearchService {
       return [];
     }
 
-    const sector = parsedIdea.sector?.[0] ?? '';
+    const primarySector = parsedIdea.sector?.[0] ?? '';
+    const secondarySector = parsedIdea.sector?.[1] ?? '';
+    const subSector = parsedIdea.sub_sector ?? primarySector;
     const geo = parsedIdea.geography ?? '';
+    const stage = parsedIdea.stage ?? '';
     const keywords = (parsedIdea.keywords ?? []).slice(0, 3).join(' ');
 
+    // Queries ordered by how much structured data they tend to surface.
+    // Q1: Multi-sector + stage discovery — broader net than single-sector.
+    // Q2: Explicit check-size / thesis signal — parser extracts these fields from raw_content.
+    // Q3: Curated list pages — synthesis extracts every investor name mentioned in them.
+    // Q4: LinkedIn partner search — produces direct linkedin_url hits.
+    // Q5: Keyword + stage + geo angle — catches niche/specialist angels.
     const queries = [
-      `${sector} ${parsedIdea.stage ?? ''} investor ${geo}`.trim(),
-      `venture capital ${parsedIdea.sub_sector ?? sector} fund 2024 2025`,
-      `angel investor ${keywords}`,
-      `site:linkedin.com/in "${sector}" "venture capital" OR "angel investor" ${geo}`.trim(),
-      `site:linkedin.com/in ${keywords} investor`,
+      `${[primarySector, secondarySector].filter(Boolean).join(' ')} ${stage} venture capital investor ${geo}`.trim(),
+      `"${subSector}" VC fund "check size" OR "ticket size" investment thesis ${stage} 2025`.trim(),
+      `top ${primarySector} investors ${geo} ${stage} startup funding 2024 2025`.trim(),
+      `site:linkedin.com/in "${primarySector}" "venture capital" OR "general partner" ${geo}`.trim(),
+      `angel investor ${keywords} ${geo} investment thesis ${stage}`.trim(),
     ];
 
     try {
@@ -59,6 +69,7 @@ export class WebSearchService {
       query,
       search_depth: 'basic',
       max_results: 10,
+      include_raw_content: true,
     });
     return (response.data.results ?? []).map((r) => this.mapResult(r));
   }
@@ -94,7 +105,7 @@ export class WebSearchService {
       sources: [isLinkedIn ? 'linkedin' : 'web'],
       source_urls: [result.url],
       conflicts: [],
-      raw_text: result.content ?? undefined,
+      raw_text: result.raw_content ?? result.content ?? undefined,
     };
   }
 
