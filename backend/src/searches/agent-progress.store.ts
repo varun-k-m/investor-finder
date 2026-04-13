@@ -6,6 +6,7 @@ interface ProgressEvent {
   type: 'agent_update' | 'complete';
   stage: AgentStage;
   progress: number;
+  message?: string;
 }
 
 /** In-memory singleton store for SSE agent progress subjects. [Source: docs/architecture.md#Section 5.3] */
@@ -23,12 +24,12 @@ export class AgentProgressStore {
     return this.subjects.get(searchId)!;
   }
 
-  emit(searchId: string, stage: AgentStage, progress: number): void {
+  emit(searchId: string, stage: AgentStage, progress: number, message?: string): void {
     // Use getOrCreate so the subject exists even before an SSE client connects;
     // the ReplaySubject will buffer this event and deliver it on subscription.
     const subject = this.getOrCreate(searchId);
     if (!subject.closed) {
-      subject.next({ type: 'agent_update', stage, progress });
+      subject.next({ type: 'agent_update', stage, progress, message });
     }
   }
 

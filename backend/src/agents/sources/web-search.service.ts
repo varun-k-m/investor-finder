@@ -19,6 +19,22 @@ export class WebSearchService {
 
   constructor(private readonly config: ConfigService) {}
 
+  /** Called by the agentic loop — Claude supplies the query directly. */
+  async searchByQuery(query: string, includeRawContent = false): Promise<SynthesisedInvestor[]> {
+    const apiKey = this.config.get<string>('TAVILY_API_KEY');
+    if (!apiKey) {
+      this.logger.warn('TAVILY_API_KEY not set — skipping web search');
+      return [];
+    }
+    try {
+      const results = await this.tavilySearch(query, apiKey, includeRawContent);
+      return this.deduplicateByDomain(results);
+    } catch (err) {
+      this.logger.error('WebSearchService.searchByQuery failed', err);
+      return [];
+    }
+  }
+
   async search(parsedIdea: ParsedIdea): Promise<SynthesisedInvestor[]> {
     const apiKey = this.config.get<string>('TAVILY_API_KEY');
     if (!apiKey) {

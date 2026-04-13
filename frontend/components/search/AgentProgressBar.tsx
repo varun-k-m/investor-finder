@@ -37,6 +37,8 @@ function formatElapsed(seconds: number): string {
 export function AgentProgressBar() {
   const agentStage = useAppStore((s) => s.agentStage);
   const agentProgress = useAppStore((s) => s.agentProgress);
+  const agentMessage = useAppStore((s) => s.agentMessage);
+  const agentLog = useAppStore((s) => s.agentLog);
   const shouldReduceMotion = useReducedMotion();
 
   // Displayed progress — creeps slowly between real milestone jumps
@@ -195,10 +197,19 @@ export function AgentProgressBar() {
             className="space-y-2"
           >
             <div className="flex items-center justify-between text-xs">
-              <span className="font-medium text-foreground">
-                {PIPELINE_STAGES.find((s) => s.id === agentStage)?.description}…
-              </span>
-              <div className="flex items-center gap-2 text-muted-foreground tabular-nums">
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={agentMessage ?? agentStage}
+                  initial={shouldReduceMotion ? {} : { opacity: 0, y: 3 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={shouldReduceMotion ? {} : { opacity: 0, y: -3 }}
+                  transition={{ duration: 0.2 }}
+                  className="font-medium text-foreground"
+                >
+                  {agentMessage ?? `${PIPELINE_STAGES.find((s) => s.id === agentStage)?.description}…`}
+                </motion.span>
+              </AnimatePresence>
+              <div className="flex items-center gap-2 text-muted-foreground tabular-nums shrink-0 ml-3">
                 <span>{Math.round(displayProgress)}%</span>
                 <span className="opacity-50">·</span>
                 <span>{formatElapsed(elapsed)}</span>
@@ -212,6 +223,28 @@ export function AgentProgressBar() {
                 transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.4, ease: 'easeOut' }}
               />
             </div>
+
+            {/* Activity log */}
+            {agentLog.length > 0 && (
+              <motion.div
+                initial={shouldReduceMotion ? {} : { opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="pt-1 space-y-1"
+              >
+                {agentLog.map((entry, i) => (
+                  <motion.div
+                    key={entry}
+                    initial={shouldReduceMotion ? {} : { opacity: 0, x: -4 }}
+                    animate={{ opacity: 1 - i * 0.3, x: 0 }}
+                    transition={{ duration: 0.2, delay: i * 0.04 }}
+                    className="flex items-center gap-1.5 text-xs text-muted-foreground"
+                  >
+                    <div className="w-1 h-1 rounded-full bg-muted-foreground/40 shrink-0" />
+                    <span>{entry}</span>
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
           </motion.div>
         )}
 

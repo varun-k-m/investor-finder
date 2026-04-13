@@ -19,6 +19,21 @@ export class NewsSignalService {
 
   constructor(private readonly config: ConfigService) {}
 
+  /** Called by the agentic loop — Claude supplies the query directly. */
+  async searchByQuery(query: string): Promise<SynthesisedInvestor[]> {
+    const apiKey = this.config.get<string>('TAVILY_API_KEY');
+    if (!apiKey) {
+      this.logger.warn('TAVILY_API_KEY not set — skipping news search');
+      return [];
+    }
+    try {
+      return await this.tavilyNewsSearch(query, apiKey);
+    } catch (err) {
+      this.logger.error('NewsSignalService.searchByQuery failed', err);
+      return [];
+    }
+  }
+
   async search(parsedIdea: ParsedIdea): Promise<SynthesisedInvestor[]> {
     const apiKey = this.config.get<string>('TAVILY_API_KEY');
     if (!apiKey) {

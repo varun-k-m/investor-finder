@@ -16,8 +16,8 @@ export function useAgentStream(searchId: string | null) {
     const es = new EventSource(`/api/v1/searches/${searchId}/stream`);
 
     es.addEventListener('agent_update', (e) => {
-      const { stage, progress } = JSON.parse(e.data);
-      setAgentProgress(stage as AgentStage, progress ?? 0);
+      const { stage, progress, message } = JSON.parse(e.data);
+      setAgentProgress(stage as AgentStage, progress ?? 0, message);
     });
 
     es.addEventListener('complete', (e) => {

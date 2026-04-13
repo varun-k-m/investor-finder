@@ -21,6 +21,11 @@ export class CrunchbaseService {
 
   constructor(private readonly config: ConfigService) {}
 
+  /** Called by the agentic loop — Claude supplies keywords directly. */
+  async searchByKeywords(keywords: string[], parsedIdea: ParsedIdea): Promise<SynthesisedInvestor[]> {
+    return this.search({ ...parsedIdea, keywords });
+  }
+
   async search(parsedIdea: ParsedIdea): Promise<SynthesisedInvestor[]> {
     const apiKey = this.config.get<string>('CRUNCHBASE_API_KEY');
     if (!apiKey) {
