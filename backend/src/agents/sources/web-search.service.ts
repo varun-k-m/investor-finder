@@ -35,21 +35,21 @@ export class WebSearchService {
 
     // Queries ordered by how much structured data they tend to surface.
     // Q1: Multi-sector + stage discovery — broader net than single-sector.
-    // Q2: Explicit check-size / thesis signal — parser extracts these fields from raw_content.
+    // Q2: Explicit check-size / thesis signal — raw_content needed for parser to extract these fields.
     // Q3: Curated list pages — synthesis extracts every investor name mentioned in them.
-    // Q4: LinkedIn partner search — produces direct linkedin_url hits.
-    // Q5: Keyword + stage + geo angle — catches niche/specialist angels.
-    const queries = [
-      `${[primarySector, secondarySector].filter(Boolean).join(' ')} ${stage} venture capital investor ${geo}`.trim(),
-      `"${subSector}" VC fund "check size" OR "ticket size" investment thesis ${stage} 2025`.trim(),
-      `top ${primarySector} investors ${geo} ${stage} startup funding 2024 2025`.trim(),
-      `site:linkedin.com/in "${primarySector}" "venture capital" OR "general partner" ${geo}`.trim(),
-      `angel investor ${keywords} ${geo} investment thesis ${stage}`.trim(),
+    // Q4: Keyword + stage + geo angle — catches niche/specialist angels.
+    // Note: LinkedIn site: search removed — slow/blocked by Tavily; LinkedIn URLs are still
+    // captured via isLinkedInProfile() whenever other queries surface linkedin.com/in links.
+    const queries: Array<{ q: string; rawContent: boolean }> = [
+      { q: `${[primarySector, secondarySector].filter(Boolean).join(' ')} ${stage} venture capital investor ${geo}`.trim(), rawContent: false },
+      { q: `"${subSector}" VC fund "check size" OR "ticket size" investment thesis ${stage} 2025`.trim(), rawContent: true },
+      { q: `top ${primarySector} investors ${geo} ${stage} startup funding 2024 2025`.trim(), rawContent: false },
+      { q: `angel investor ${keywords} ${geo} investment thesis ${stage}`.trim(), rawContent: false },
     ];
 
     try {
       const settled = await Promise.allSettled(
-        queries.map((q) => this.tavilySearch(q, apiKey)),
+        queries.map(({ q, rawContent }) => this.tavilySearch(q, apiKey, rawContent)),
       );
 
       const allResults: SynthesisedInvestor[] = settled.flatMap((r) =>
@@ -63,13 +63,13 @@ export class WebSearchService {
     }
   }
 
-  private async tavilySearch(query: string, apiKey: string): Promise<SynthesisedInvestor[]> {
+  private async tavilySearch(query: string, apiKey: string, includeRawContent = false): Promise<SynthesisedInvestor[]> {
     const response = await axios.post<{ results: TavilyResult[] }>(TAVILY_URL, {
       api_key: apiKey,
       query,
       search_depth: 'basic',
       max_results: 10,
-      include_raw_content: true,
+      include_raw_content: includeRawContent,
     });
     return (response.data.results ?? []).map((r) => this.mapResult(r));
   }
