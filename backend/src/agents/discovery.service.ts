@@ -68,9 +68,9 @@ You have two tools:
 - search_web: Structured search returning raw page content. Use when you need check size or thesis details (set include_raw_content=true).
 
 Strategy:
-1. Make 3–4 web_search calls with varied queries (sector + stage, sector + geography, sub-sector specific, angel vs VC).
-2. Follow up with 1–2 search_web calls using include_raw_content=true to extract check sizes and thesis details.
-3. Stop after 6 tool calls or once you have found 10+ additional investors beyond what is pre-loaded.
+1. Make 2–3 web_search calls with varied queries (sector + stage, sector + geography, sub-sector specific).
+2. Follow up with 1 search_web call using include_raw_content=true to extract check sizes and thesis details.
+3. Stop after 4 tool calls or once you have found 10+ additional investors beyond what is pre-loaded.
 
 Do not return any text — only use the tools. When you are done, stop calling tools.`;
 
@@ -141,7 +141,7 @@ export class DiscoveryService {
       });
 
       let toolCallCount = 0;
-      const MAX_TOOL_CALLS = 6; // Claude targets 5–6 web calls; hard cap prevents runaway
+      const MAX_TOOL_CALLS = 4; // Claude targets 3–4 web calls; hard cap prevents runaway
 
       while (response.stop_reason === 'tool_use' && toolCallCount < MAX_TOOL_CALLS) {
         // Extract any web_search_tool_result blocks Claude produced via its built-in tool

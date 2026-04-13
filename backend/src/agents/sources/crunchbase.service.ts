@@ -64,7 +64,7 @@ export class CrunchbaseService {
       const response = await axios.post<{ entities: CrunchbaseOrg[] }>(
         CRUNCHBASE_API_URL,
         body,
-        { params: { user_key: apiKey } },
+        { params: { user_key: apiKey }, timeout: 10_000 },
       );
 
       return (response.data.entities ?? []).map((org) => this.mapToInvestor(org, parsedIdea));

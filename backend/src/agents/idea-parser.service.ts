@@ -47,7 +47,7 @@ export class IdeaParserService {
       : rawInput;
 
     const response = await this.anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 800,
       system: IDEA_PARSER_SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userMessage }],

@@ -83,8 +83,9 @@ export class NewsSignalService {
       search_depth: 'basic',
       topic: 'news',
       max_results: 8,
-      include_raw_content: true,
-    });
+      // News snippets are sufficient — raw content bloats the payload and slows synthesis
+      include_raw_content: false,
+    }, { timeout: 15_000 });
     return (response.data.results ?? []).map((r) => this.mapResult(r));
   }
 

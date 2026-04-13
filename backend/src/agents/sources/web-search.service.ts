@@ -86,7 +86,7 @@ export class WebSearchService {
       search_depth: 'basic',
       max_results: 10,
       include_raw_content: includeRawContent,
-    });
+    }, { timeout: 15_000 });
     return (response.data.results ?? []).map((r) => this.mapResult(r));
   }
 

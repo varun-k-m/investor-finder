@@ -117,12 +117,26 @@ export class SearchesService {
 
   getProgressStream(searchId: string): Observable<SseMessageEvent> {
     return new Observable((subscriber) => {
+      // Hold references so the synchronous teardown can clean up even if the
+      // async DB lookup hasn't resolved yet (fixes pre-existing cleanup bug).
+      let rxSub: { unsubscribe(): void } | undefined;
+      let keepalive: ReturnType<typeof setInterval> | undefined;
+      let dbPoll: ReturnType<typeof setInterval> | undefined;
+      let timeout: ReturnType<typeof setTimeout> | undefined;
+
       this.searchRepo
         .findOne({ where: { id: searchId } })
         .then((search) => {
+          if (subscriber.closed) return;
+
           if (search && (search.status === 'complete' || search.status === 'failed')) {
             subscriber.next({
-              data: JSON.stringify({ type: 'complete', stage: search.status, progress: 100 }),
+              data: JSON.stringify({
+                type: 'complete',
+                stage: search.status,
+                progress: 100,
+                result_count: search.result_count ?? 0,
+              }),
               type: 'complete',
             });
             subscriber.complete();
@@ -130,26 +144,53 @@ export class SearchesService {
           }
 
           const subject = this.progressStore.getOrCreate(searchId);
-          const sub = subject.subscribe({
+          rxSub = subject.subscribe({
             next: (event) => subscriber.next({ data: JSON.stringify(event), type: event.type }),
             complete: () => subscriber.complete(),
             error: (e) => subscriber.error(e),
           });
 
-          const keepalive = setInterval(
+          keepalive = setInterval(
             () => subscriber.next({ data: '', type: 'keepalive' }),
             15_000,
           );
 
-          const timeout = setTimeout(() => subscriber.complete(), 60_000);
+          // Fallback DB poll — fires the complete event even when the job runs
+          // on a different backend instance (in-memory store is not shared).
+          dbPoll = setInterval(async () => {
+            if (subscriber.closed) return;
+            try {
+              const s = await this.searchRepo.findOne({ where: { id: searchId } });
+              if (s?.status === 'complete' || s?.status === 'failed') {
+                subscriber.next({
+                  data: JSON.stringify({
+                    type: 'complete',
+                    stage: s.status,
+                    progress: 100,
+                    result_count: s.result_count ?? 0,
+                  }),
+                  type: 'complete',
+                });
+                subscriber.complete();
+              }
+            } catch {
+              // ignore transient DB errors — next poll will retry
+            }
+          }, 3_000);
 
-          return () => {
-            sub.unsubscribe();
-            clearInterval(keepalive);
-            clearTimeout(timeout);
-          };
+          // 5-minute safety timeout (searches can take up to ~3 min)
+          timeout = setTimeout(() => subscriber.complete(), 300_000);
         })
         .catch((err) => subscriber.error(err));
+
+      // Teardown — runs synchronously when the client disconnects or the
+      // observable completes, regardless of whether the DB lookup finished.
+      return () => {
+        rxSub?.unsubscribe();
+        if (keepalive !== undefined) clearInterval(keepalive);
+        if (dbPoll !== undefined) clearInterval(dbPoll);
+        if (timeout !== undefined) clearTimeout(timeout);
+      };
     });
   }
 }

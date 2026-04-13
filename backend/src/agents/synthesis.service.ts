@@ -40,10 +40,7 @@ Rules:
 - For website: use the investor's own domain, not the article URL
 - For stages: use lowercase strings like "pre-seed", "seed", "series-a", "series-b", "growth"
 - If a field cannot be determined, use null or []
-- Return ONLY a raw JSON array — no markdown, no explanation, no preamble
-
-Input records:
-{{RAW_RECORDS}}`;
+- Return ONLY a raw JSON array — no markdown, no explanation, no preamble`;
 
 /** [Source: docs/architecture.md#Section 6.4] */
 @Injectable()
@@ -58,27 +55,25 @@ export class SynthesisService {
   async synthesise(rawRecords: SynthesisedInvestor[], _parsedIdea: ParsedIdea): Promise<SynthesisedInvestor[]> {
     if (rawRecords.length === 0) return [];
 
-    // Trim to 50 most unique by domain to avoid context overflow
-    const trimmed = this.trimByDomain(rawRecords, 50);
+    // Trim to 25 most unique by domain — enough variety without bloating the prompt
+    const trimmed = this.trimByDomain(rawRecords, 25);
 
-    // Truncate raw_text per record to keep total prompt manageable.
-    // 2 000 chars gives Claude enough context to extract sectors, stages,
-    // check sizes and thesis from raw_content pages without blowing the prompt.
+    // 500 chars is plenty to identify investor names, stages, and check sizes from a snippet.
+    // Keeping this tight is the single biggest lever on synthesis latency.
     const truncated = trimmed.map((r) => ({
       ...r,
-      raw_text: r.raw_text ? r.raw_text.slice(0, 2000) : undefined,
+      raw_text: r.raw_text ? r.raw_text.slice(0, 500) : undefined,
     }));
 
-    const systemPrompt = SYNTHESIS_SYSTEM_PROMPT.replace(
-      '{{RAW_RECORDS}}',
-      JSON.stringify(truncated),
-    );
-
+    // Records go in the user message so the system prompt stays static and cacheable.
     const response = await this.anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 8000,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: 'Synthesise the investor records above.' }],
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 6000,
+      system: SYNTHESIS_SYSTEM_PROMPT,
+      messages: [{
+        role: 'user',
+        content: `Synthesise these investor records:\n${JSON.stringify(truncated)}`,
+      }],
     });
 
     const text = (response.content[0] as { type: string; text: string }).text;
