@@ -56,4 +56,14 @@ export class Search {
 
   @Column({ type: 'timestamptz', nullable: true })
   completed_at: Date | null;
+
+  // Live progress — written by DiscoveryService so SSE handlers on any instance can poll these
+  @Column({ type: 'text', nullable: true })
+  progress_stage: string | null;
+
+  @Column({ type: 'int', nullable: true })
+  progress_pct: number | null;
+
+  @Column({ type: 'text', nullable: true })
+  progress_message: string | null;
 }

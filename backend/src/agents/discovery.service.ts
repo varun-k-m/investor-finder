@@ -98,7 +98,7 @@ export class DiscoveryService {
   async run(searchId: string, parsedIdea: ParsedIdea): Promise<void> {
     try {
       await this.searchRepo.update({ id: searchId }, { status: 'running' });
-      this.progressStore.emit(searchId, 'searching', 10, 'Running initial investor queries…');
+      this.emitProgress(searchId, 'searching', 10, 'Running initial investor queries…');
 
       // ── Pre-seed: run Crunchbase + news in parallel before the loop ─────
       const [cbResult, newsResult] = await Promise.allSettled([
@@ -113,7 +113,7 @@ export class DiscoveryService {
       this.logger.log(
         `Pre-seed: ${rawBuffer.length} records (crunchbase=${cbResult.status === 'fulfilled' ? cbResult.value.length : 'failed'}, news=${newsResult.status === 'fulfilled' ? newsResult.value.length : 'failed'})`,
       );
-      this.progressStore.emit(
+      this.emitProgress(
         searchId,
         'searching',
         25,
@@ -179,7 +179,7 @@ export class DiscoveryService {
 
         const loopMsg = LOOP_MESSAGES[Math.min(loopIteration - 1, LOOP_MESSAGES.length - 1)];
         const loopPct = Math.min(30 + loopIteration * 5, 55);
-        this.progressStore.emit(
+        this.emitProgress(
           searchId,
           'searching',
           loopPct,
@@ -203,7 +203,7 @@ export class DiscoveryService {
       );
 
       // ── Synthesis ────────────────────────────────────────────────────────
-      this.progressStore.emit(
+      this.emitProgress(
         searchId,
         'synthesis',
         60,
@@ -213,7 +213,7 @@ export class DiscoveryService {
       this.logger.log(`Discovery: synthesised ${synthesised.length} investors`);
 
       // ── Ranking ──────────────────────────────────────────────────────────
-      this.progressStore.emit(
+      this.emitProgress(
         searchId,
         'ranking',
         80,
@@ -248,10 +248,23 @@ export class DiscoveryService {
       }
     } catch (err) {
       this.logger.error(`Discovery failed for search ${searchId}`, err);
-      this.progressStore.emit(searchId, 'failed', 0);
+      this.emitProgress(searchId, 'failed', 0);
       this.progressStore.complete(searchId);
       await this.searchRepo.update({ id: searchId }, { status: 'failed' }).catch(() => undefined);
     }
+  }
+
+  // ─── Progress helper ───────────────────────────────────────────────────────
+
+  /**
+   * Emits a progress event via the in-memory store (same-instance subscribers)
+   * AND persists it to the DB so SSE handlers on other instances can poll it.
+   */
+  private emitProgress(searchId: string, stage: string, pct: number, message?: string): void {
+    this.progressStore.emit(searchId, stage as Parameters<typeof this.progressStore.emit>[1], pct, message);
+    this.searchRepo
+      .update({ id: searchId }, { progress_stage: stage, progress_pct: pct, progress_message: message ?? null })
+      .catch(() => undefined); // fire-and-forget — DB write must not block the agent
   }
 
   // ─── Claude web search result extractor ────────────────────────────────────

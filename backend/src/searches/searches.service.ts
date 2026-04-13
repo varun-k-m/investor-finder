@@ -155,13 +155,37 @@ export class SearchesService {
             15_000,
           );
 
-          // Fallback DB poll — fires the complete event even when the job runs
-          // on a different backend instance (in-memory store is not shared).
+          // Fallback DB poll — fires progress + complete events even when the job
+          // runs on a different backend instance (in-memory store is not shared).
+          // DiscoveryService writes progress_stage/pct/message to DB on every emit.
+          let lastEmittedPct = -1;
           dbPoll = setInterval(async () => {
             if (subscriber.closed) return;
             try {
               const s = await this.searchRepo.findOne({ where: { id: searchId } });
-              if (s?.status === 'complete' || s?.status === 'failed') {
+              if (!s) return;
+
+              // Emit intermediate progress if it has advanced since last poll
+              if (
+                s.status === 'running' &&
+                s.progress_stage &&
+                s.progress_pct !== null &&
+                s.progress_pct !== undefined &&
+                s.progress_pct > lastEmittedPct
+              ) {
+                lastEmittedPct = s.progress_pct;
+                subscriber.next({
+                  data: JSON.stringify({
+                    type: 'agent_update',
+                    stage: s.progress_stage,
+                    progress: s.progress_pct,
+                    message: s.progress_message ?? undefined,
+                  }),
+                  type: 'agent_update',
+                });
+              }
+
+              if (s.status === 'complete' || s.status === 'failed') {
                 subscriber.next({
                   data: JSON.stringify({
                     type: 'complete',
