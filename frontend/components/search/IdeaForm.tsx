@@ -10,7 +10,7 @@ import { apiFetch } from '@/lib/api';
 import { useAppStore } from '@/store/app.store';
 import { track } from '@/lib/posthog';
 import { MultiSelect } from './MultiSelect';
-import { BudgetSlider } from './BudgetSlider';
+import { BudgetSlider, BUDGET_UNLIMITED } from './BudgetSlider';
 
 const MIN_LENGTH = 20;
 
@@ -38,7 +38,7 @@ export function IdeaForm() {
   const [sectors, setSectors] = useState<string[]>([]);
   const [stages, setStages] = useState<string[]>([]);
   const [geoFocus, setGeoFocus] = useState<string[]>([]);
-  const [budget, setBudget] = useState<[number, number]>([0, 0]);
+  const [budget, setBudget] = useState<[number, number]>([0, BUDGET_UNLIMITED]);
   const [quotaError, setQuotaError] = useState(false);
   const [genericError, setGenericError] = useState<string | null>(null);
 
@@ -58,7 +58,7 @@ export function IdeaForm() {
         ...(stages.length > 0 && { stages }),
         ...(geoFocus.length > 0 && { geo_focus: geoFocus }),
         ...(budget[0] > 0 && { budget_min: budget[0] }),
-        ...(budget[1] > 0 && { budget_max: budget[1] }),
+        ...(budget[1] > 0 && budget[1] < BUDGET_UNLIMITED && { budget_max: budget[1] }),
       };
       return apiFetch<CreateSearchResponse>('/searches', getToken, {
         method: 'POST',
