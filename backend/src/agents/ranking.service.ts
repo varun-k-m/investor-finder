@@ -11,12 +11,19 @@ Startup idea:
 Scoring dimensions:
 - sector_fit: Does the investor's thesis and portfolio match the startup's sector?
   Reason semantically — "fintech infrastructure" matches "B2B payment tools".
+  If the investor has no listed sectors, score 50 (unknown, not penalised).
 - stage_fit: Does the startup's current stage match investor's preferred stage?
   Penalise heavily if more than one stage away.
+  If the startup stage is null/unknown OR the investor has no listed stages, score 50.
 - budget_fit: Does the funding ask fall within the investor's typical check size?
   Score 100 if within range, penalise proportionally outside range.
+  If the funding ask is null/unknown OR the investor has no check size data, score 50.
 - geo_fit: Does the investor invest in the founder's geography?
   Score 100 if explicit match, 70 if global/agnostic, 30 if different region.
+  If geography is null/unknown for either side, score 60.
+
+IMPORTANT: Never score a dimension 0 purely because data is missing. Reserve 0 for clear
+mismatches (e.g. investor only does biotech but startup is SaaS).
 
 overall = (sector_fit * 0.40) + (stage_fit * 0.25) +
           (budget_fit * 0.25) + (geo_fit * 0.10)
@@ -96,14 +103,20 @@ export class RankingService {
         }));
     }
 
-    // Merge scores back onto full investor objects by canonical_name
+    // Merge scores back onto full investor objects by canonical_name.
+    // Claude may normalize names (e.g. "a16z" vs "Andreessen Horowitz"), so fall back
+    // to a case-insensitive normalised lookup before defaulting to zero.
+    const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
     const scoreMap = new Map(scores.map((s) => [s.canonical_name, s]));
+    const normalizedScoreMap = new Map(scores.map((s) => [normalize(s.canonical_name), s]));
 
     const merged = investors.map((inv) => {
-      const score = scoreMap.get(inv.canonical_name) ?? {
-        sector_fit: 0, stage_fit: 0, budget_fit: 0, geo_fit: 0,
-        overall: 0, fit_reasoning: 'Scoring unavailable',
-      };
+      const score =
+        scoreMap.get(inv.canonical_name) ??
+        normalizedScoreMap.get(normalize(inv.canonical_name)) ?? {
+          sector_fit: 0, stage_fit: 0, budget_fit: 0, geo_fit: 0,
+          overall: 0, fit_reasoning: 'Scoring unavailable',
+        };
       return { ...inv, ...score };
     });
 
