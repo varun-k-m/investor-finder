@@ -78,7 +78,7 @@ export function InvestorCard({
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0">
-              <h3 className="font-semibold text-base leading-tight truncate">
+              <h3 className="font-semibold text-base leading-tight">
                 {investor.canonical_name}
               </h3>
               {investor.fund_name && (
