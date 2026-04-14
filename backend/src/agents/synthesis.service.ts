@@ -55,8 +55,9 @@ export class SynthesisService {
   async synthesise(rawRecords: SynthesisedInvestor[], _parsedIdea: ParsedIdea): Promise<SynthesisedInvestor[]> {
     if (rawRecords.length === 0) return [];
 
-    // Trim to 25 most unique by domain — enough variety without bloating the prompt
-    const trimmed = this.trimByDomain(rawRecords, 25);
+    // Trim to 40 most unique by domain — matches the BUFFER_EXIT_THRESHOLD in DiscoveryService
+    // so we use the full set of records the loop collected rather than discarding most of them.
+    const trimmed = this.trimByDomain(rawRecords, 40);
 
     // 500 chars is plenty to identify investor names, stages, and check sizes from a snippet.
     // Keeping this tight is the single biggest lever on synthesis latency.
@@ -69,7 +70,7 @@ export class SynthesisService {
     const response = await this.anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 6000,
-      system: SYNTHESIS_SYSTEM_PROMPT,
+      system: [{ type: 'text', text: SYNTHESIS_SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
       messages: [{
         role: 'user',
         content: `Synthesise these investor records:\n${JSON.stringify(truncated)}`,

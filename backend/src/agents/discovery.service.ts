@@ -135,13 +135,14 @@ export class DiscoveryService {
       let response = await this.anthropic.messages.create({
         model: 'claude-sonnet-4-6',
         max_tokens: 2048,
-        system: ORCHESTRATOR_SYSTEM_PROMPT,
+        system: [{ type: 'text', text: ORCHESTRATOR_SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
         tools: INVESTOR_TOOLS,
         messages,
       });
 
       let toolCallCount = 0;
-      const MAX_TOOL_CALLS = 4; // Claude targets 3–4 web calls; hard cap prevents runaway
+      const MAX_TOOL_CALLS = 4; // hard cap prevents runaway
+      const BUFFER_EXIT_THRESHOLD = 40; // synthesis uses 40 records — no point gathering more
 
       while (response.stop_reason === 'tool_use' && toolCallCount < MAX_TOOL_CALLS) {
         // Extract any web_search_tool_result blocks Claude produced via its built-in tool
@@ -186,16 +187,38 @@ export class DiscoveryService {
           `${loopMsg} · ${rawBuffer.length} investors found`,
         );
 
-        messages.push({ role: 'assistant', content: response.content });
+        // Exit before firing another Claude API call if we've hit our caps.
+        // Previously the loop would make one more call just to receive "end_turn",
+        // wasting 4-5 minutes while Claude ran more internal web searches.
+        if (toolCallCount >= MAX_TOOL_CALLS || rawBuffer.length >= BUFFER_EXIT_THRESHOLD) {
+          break;
+        }
+
+        // Carry only tool_use blocks into the history — strip web_search_tool_result blobs
+        // which are encrypted, unreadable by us, and bloat the context for the next call.
+        const contentForHistory = response.content.filter(
+          (b) => b.type !== 'web_search_tool_result',
+        );
+        messages.push({ role: 'assistant', content: contentForHistory });
         messages.push({ role: 'user', content: toolResults });
 
         response = await this.anthropic.messages.create({
           model: 'claude-sonnet-4-6',
           max_tokens: 2048,
-          system: ORCHESTRATOR_SYSTEM_PROMPT,
+          system: [{ type: 'text', text: ORCHESTRATOR_SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
           tools: INVESTOR_TOOLS,
           messages,
         });
+      }
+
+      // Harvest any web_search results Claude produced in the final response
+      // (previously these were silently dropped when the loop exited).
+      const finalWebRecords = this.extractClaudeWebSearchResults(response.content);
+      if (finalWebRecords.length > 0) {
+        rawBuffer.push(...finalWebRecords);
+        this.logger.log(
+          `Final response web_search: +${finalWebRecords.length} records (buffer: ${rawBuffer.length})`,
+        );
       }
 
       this.logger.log(
