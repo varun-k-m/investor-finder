@@ -361,6 +361,8 @@ export function AgentProgressBar() {
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
+            aria-live="polite"
+            aria-atomic="false"
             className="rounded-lg border border-border/40 bg-muted/30 px-4 py-3 space-y-2"
           >
             <AnimatePresence initial={false}>

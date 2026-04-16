@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useMutation } from '@tanstack/react-query';
 import { useAuth } from '@clerk/nextjs';
 import { Linkedin, Twitter, ExternalLink, DollarSign } from 'lucide-react';
@@ -26,6 +27,13 @@ const STATUS_LABELS: Record<InvestorStatus, string> = {
   passed: 'Passed',
 };
 
+const STATUS_COLORS: Record<InvestorStatus, string> = {
+  saved:     'bg-green-600 text-white hover:bg-green-700 border-green-600',
+  contacted: 'bg-blue-600 text-white hover:bg-blue-700 border-blue-600',
+  replied:   'bg-purple-600 text-white hover:bg-purple-700 border-purple-600',
+  passed:    'bg-muted text-muted-foreground hover:bg-muted/80 border-border',
+};
+
 interface SaveResponse {
   id: string;
   investor_id: string;
@@ -43,6 +51,8 @@ export function InvestorCard({
   const [savedStatus, setSavedStatus] = useState<InvestorStatus | undefined>(initialStatus);
   const [showBreakdown, setShowBreakdown] = useState(false);
   const [showPitch, setShowPitch] = useState(false);
+  const [animating, setAnimating] = useState(false);
+  const reducedMotion = useReducedMotion() ?? false;
   const { getToken } = useAuth();
 
   const saveMutation = useMutation({
@@ -51,6 +61,10 @@ export function InvestorCard({
     onSuccess: () => {
       setSaved(true);
       setSavedStatus('saved');
+      if (!reducedMotion) {
+        setAnimating(true);
+        setTimeout(() => setAnimating(false), 400);
+      }
       track('investor_saved', { investor_id: investor.id, investor_name: investor.canonical_name });
     },
   });
@@ -153,18 +167,27 @@ export function InvestorCard({
 
         {/* Actions */}
         <div className="flex items-center gap-2 pt-1">
-          <Button
-            size="sm"
-            variant="outline"
+          <motion.button
+            type="button"
             onClick={() => saveMutation.mutate()}
             disabled={saved || saveMutation.isPending}
+            animate={animating && !reducedMotion ? { scale: [1, 1.12, 1] } : { scale: 1 }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
+            className={cn(
+              'inline-flex items-center justify-center rounded-md text-sm font-medium',
+              'h-9 px-3 border transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+              'disabled:pointer-events-none disabled:opacity-50',
+              saved && savedStatus
+                ? STATUS_COLORS[savedStatus]
+                : 'border-input bg-background hover:bg-accent hover:text-accent-foreground',
+            )}
           >
             {saved && savedStatus
               ? STATUS_LABELS[savedStatus]
               : saveMutation.isPending
                 ? 'Saving...'
                 : 'Save'}
-          </Button>
+          </motion.button>
 
           <Button size="sm" variant="outline" onClick={() => setShowPitch(true)}>
             Generate Pitch

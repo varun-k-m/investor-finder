@@ -1,6 +1,6 @@
 # Story 8.3: Kanban card pop-in animation on SavedBoard
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -20,15 +20,15 @@ so that the Kanban board feels responsive and confirms the action clearly.
 
 ## Tasks / Subtasks
 
-- [ ] Update `frontend/components/saved/SavedBoard.tsx` — wrap card list with AnimatePresence (AC: 1, 2, 3, 4)
-  - [ ] Import `AnimatePresence, motion, useReducedMotion` from `framer-motion`
-  - [ ] Add `const reducedMotion = useReducedMotion() ?? false` in the `SavedBoard` component
-  - [ ] In each column's cards section, wrap the `column.map(...)` in `<AnimatePresence initial={false}>`
-  - [ ] Replace the card's outer `<div key={item.id} draggable ...>` with `<motion.div>` — preserve all existing drag handlers, className, and aria attributes
-  - [ ] Add spring animation props to `motion.div` (see Dev Notes)
-  - [ ] Guard animation with `reducedMotion`: when true, pass empty `initial`/`animate`/`exit` objects
+- [x] Update `frontend/components/saved/SavedBoard.tsx` — wrap card list with AnimatePresence (AC: 1, 2, 3, 4)
+  - [x] Import `AnimatePresence, motion, useReducedMotion` from `framer-motion`
+  - [x] Add `const reducedMotion = useReducedMotion() ?? false` in the `SavedBoard` component
+  - [x] In each column's cards section, wrap the `column.map(...)` in `<AnimatePresence initial={false}>`
+  - [x] Replace the card's outer `<div key={item.id} draggable ...>` with `<motion.div>` — preserve all existing drag handlers, className, and aria attributes
+  - [x] Add spring animation props to `motion.div` (see Dev Notes)
+  - [x] Guard animation with `reducedMotion`: when true, pass empty `initial`/`animate`/`exit` objects
 
-- [ ] Run `npm run typecheck && npm run lint` — zero errors
+- [x] Run `npm run typecheck && npm run lint` — zero errors
 
 ## Dev Notes
 
@@ -138,9 +138,17 @@ Place `<AnimatePresence initial={false}>` as a direct wrapper around the `column
 ## Dev Agent Record
 
 ### Agent Model Used
+claude-sonnet-4-6
 
 ### Debug Log References
+None.
 
 ### Completion Notes List
+- `AnimatePresence initial={false}` wraps `column.map()` — mount-time cards skip animation (AC3)
+- `motion.div` with spring `{ stiffness: 300, damping: 24 }` replaces card `<div>`
+- `layout={!reducedMotion}` enables smooth gap-fill when cards leave columns
+- Native HTML5 drag `onDragStart` event cast to `React.DragEvent<HTMLDivElement>` via `unknown` — required because `motion.div` overrides `onDragStart` type to framer-motion's `PointerEvent`-based signature; runtime behavior unchanged
+- Added `React` namespace import for `React.DragEvent` type reference
 
 ### File List
+- `frontend/components/saved/SavedBoard.tsx`

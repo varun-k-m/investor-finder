@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@clerk/nextjs';
 import { Loader2, DollarSign, Linkedin, Twitter, ExternalLink, GripVertical } from 'lucide-react';
@@ -202,6 +203,19 @@ export function SavedBoard() {
   const queryClient = useQueryClient();
   const [selectedItem, setSelectedItem] = useState<SavedInvestor | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const reducedMotion = useReducedMotion() ?? false;
+
+  const cardVariants = {
+    initial: reducedMotion ? {} : { opacity: 0, y: 12 },
+    animate: reducedMotion ? {} : { opacity: 1, y: 0 },
+    exit:    reducedMotion ? {} : { opacity: 0, y: -8, transition: { duration: 0.15 } },
+  };
+
+  const springTransition = {
+    type: 'spring' as const,
+    stiffness: 300,
+    damping: 24,
+  };
 
   // Drag & drop state
   const [draggedId, setDraggedId] = useState<string | null>(null);
@@ -345,14 +359,21 @@ export function SavedBoard() {
                   </div>
                 ) : (
                   <>
+                    <AnimatePresence initial={false}>
                     {column.map((item) => {
                       const isUpdating = updatingId === item.investor_id;
                       const isDragged = draggedId === item.investor_id;
 
                       return (
-                        <div
+                        <motion.div
                           key={item.id}
                           draggable
+                          variants={cardVariants}
+                          initial="initial"
+                          animate="animate"
+                          exit="exit"
+                          transition={springTransition}
+                          layout={!reducedMotion}
                           className={cn(
                             'rounded-lg border border-border bg-card p-3 space-y-1.5 select-none',
                             'cursor-grab active:cursor-grabbing',
@@ -361,10 +382,11 @@ export function SavedBoard() {
                             isUpdating && 'opacity-60',
                           )}
                           onDragStart={(e) => {
+                            const dragEvent = e as unknown as React.DragEvent<HTMLDivElement>;
                             setDraggedId(item.investor_id);
                             setDraggedFromStatus(item.status);
-                            e.dataTransfer.effectAllowed = 'move';
-                            e.dataTransfer.setData('text/plain', item.investor_id);
+                            dragEvent.dataTransfer.effectAllowed = 'move';
+                            dragEvent.dataTransfer.setData('text/plain', item.investor_id);
                           }}
                           onDragEnd={() => {
                             setDraggedId(null);
@@ -413,9 +435,10 @@ export function SavedBoard() {
                               )}
                             </div>
                           </div>
-                        </div>
+                        </motion.div>
                       );
                     })}
+                    </AnimatePresence>
 
                     {/* Extra drop target at bottom of non-empty column when dragging over */}
                     {isOver && (

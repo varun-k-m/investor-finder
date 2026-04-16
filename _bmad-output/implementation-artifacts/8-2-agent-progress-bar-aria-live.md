@@ -1,6 +1,6 @@
 # Story 8.2: AgentProgressBar activity log announces updates to screen readers
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -20,16 +20,16 @@ so that I can follow search progress without watching the screen.
 
 ## Tasks / Subtasks
 
-- [ ] Update `frontend/components/search/AgentProgressBar.tsx` — activity log container (AC: 1, 2, 3)
-  - [ ] Find the activity log outer `<motion.div>` that wraps `AnimatePresence` + log messages (lines ~360–387)
-  - [ ] Add `aria-live="polite"` and `aria-atomic="false"` to that container element
+- [x] Update `frontend/components/search/AgentProgressBar.tsx` — activity log container (AC: 1, 2, 3)
+  - [x] Find the activity log outer `<motion.div>` that wraps `AnimatePresence` + log messages (lines ~360–387)
+  - [x] Add `aria-live="polite"` and `aria-atomic="false"` to that container element
 
-- [ ] Update `frontend/hooks/useAgentStream.ts` OR the store — completion message (AC: 4)
-  - [ ] Check where `agentLog` is populated — likely in `frontend/store/app.store.ts` via `setAgentProgress`
-  - [ ] On `complete` event in `useAgentStream.ts`: append `"Search complete — N investors found"` to `agentLog` in the Zustand store
-  - [ ] The count `N` comes from the search query result — pass it if available, otherwise use a static message: `"Search complete — results ready"`
+- [x] Update `frontend/hooks/useAgentStream.ts` OR the store — completion message (AC: 4)
+  - [x] Check where `agentLog` is populated — likely in `frontend/store/app.store.ts` via `setAgentProgress`
+  - [x] On `complete` event in `useAgentStream.ts`: append `"Search complete — N investors found"` to `agentLog` in the Zustand store
+  - [x] The count `N` comes from the search query result — pass it if available, otherwise use a static message: `"Search complete — results ready"`
 
-- [ ] Run `npm run typecheck && npm run lint` — zero errors
+- [x] Run `npm run typecheck && npm run lint` — zero errors
 
 ## Dev Notes
 
@@ -117,9 +117,16 @@ This story adds only ARIA attributes. Zero visual change to the component. The a
 ## Dev Agent Record
 
 ### Agent Model Used
+claude-sonnet-4-6
 
 ### Debug Log References
+None.
 
 ### Completion Notes List
+- Added `aria-live="polite"` and `aria-atomic="false"` to activity log `motion.div` in AgentProgressBar
+- No store changes needed — completion message passed via existing `setAgentProgress('complete', 100, msg)` which flows into `agentMessage` → `allMessages` → live region
+- `result_count` parsed from SSE event data; fallback to "results ready" if unavailable
 
 ### File List
+- `frontend/components/search/AgentProgressBar.tsx`
+- `frontend/hooks/useAgentStream.ts`

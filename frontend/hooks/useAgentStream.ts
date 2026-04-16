@@ -26,14 +26,19 @@ export function useAgentStream(searchId: string | null) {
 
     es.addEventListener('complete', (e) => {
       hasReceivedEvent.current = true;
-      setAgentProgress('complete', 100);
-      es.close();
+      let resultCount: number | undefined;
       try {
         const { result_count } = JSON.parse(e.data) as { result_count?: number };
+        resultCount = result_count;
         track('search_completed', { search_id: searchId, result_count: result_count ?? 0 });
       } catch {
         track('search_completed', { search_id: searchId });
       }
+      const completionMsg = resultCount != null
+        ? `Search complete — ${resultCount} investors found`
+        : 'Search complete — results ready';
+      setAgentProgress('complete', 100, completionMsg);
+      es.close();
       queryClient.invalidateQueries({ queryKey: ['search', searchId] });
     });
 

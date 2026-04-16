@@ -1,6 +1,6 @@
 # Story 8.1: Save button animation and status-specific colors
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -24,16 +24,16 @@ so that I have clear, satisfying confirmation that the action registered.
 
 ## Tasks / Subtasks
 
-- [ ] Update `frontend/components/investors/InvestorCard.tsx` (AC: 1, 2, 3, 4, 5, 6)
-  - [ ] Add `useReducedMotion` to the existing `framer-motion` import (already imported via `AgentProgressBar` — confirm it's available in the package)
-  - [ ] Import `motion` from `framer-motion`
-  - [ ] Add `useReducedMotion()` hook call inside the component
-  - [ ] Add status color map (see Dev Notes)
-  - [ ] Replace the `<Button>` Save element with a `motion.button` that applies the scale animation on save success
-  - [ ] Ensure `animate` prop is skipped when `reducedMotion` is true
-  - [ ] Apply status-specific color classes derived from the color map
+- [x] Update `frontend/components/investors/InvestorCard.tsx` (AC: 1, 2, 3, 4, 5, 6)
+  - [x] Add `useReducedMotion` to the existing `framer-motion` import (already imported via `AgentProgressBar` — confirm it's available in the package)
+  - [x] Import `motion` from `framer-motion`
+  - [x] Add `useReducedMotion()` hook call inside the component
+  - [x] Add status color map (see Dev Notes)
+  - [x] Replace the `<Button>` Save element with a `motion.button` that applies the scale animation on save success
+  - [x] Ensure `animate` prop is skipped when `reducedMotion` is true
+  - [x] Apply status-specific color classes derived from the color map
 
-- [ ] Run `npm run typecheck && npm run lint` — zero errors
+- [x] Run `npm run typecheck && npm run lint` — zero errors
 
 ## Dev Notes
 
@@ -120,9 +120,16 @@ The `animate` prop can remain `{ scale: 1 }` at rest (no visual change). Only se
 ## Dev Agent Record
 
 ### Agent Model Used
+claude-sonnet-4-6
 
 ### Debug Log References
+None.
 
 ### Completion Notes List
+- Replaced `<Button>` Save with `<motion.button>` using scale keyframe `[1, 1.12, 1]` on save success
+- `useReducedMotion()` guards animation — `null` treated as `false` per NFR3 pattern
+- `STATUS_COLORS` map uses Tailwind token classes only — no hardcoded hex
+- `Button` import retained for "Generate Pitch" button
 
 ### File List
+- `frontend/components/investors/InvestorCard.tsx`

@@ -1,5 +1,8 @@
 export function formatBudget(usd: number): string {
-  if (usd >= 1_000_000) return `$${(usd / 1_000_000).toFixed(1)}M`;
+  if (usd >= 1_000_000) {
+    const m = usd / 1_000_000;
+    return `$${Number.isInteger(m) ? m : m.toFixed(1)}M`;
+  }
   if (usd >= 1_000) return `$${(usd / 1_000).toFixed(0)}K`;
   return `$${usd}`;
 }

@@ -3,10 +3,23 @@
 import { Slider } from '@/components/ui/slider';
 import { formatBudget } from '@/lib/format';
 
-// Logarithmic-like snap points that match how investors talk about check sizes
-const SNAP_POINTS = [0, 50_000, 100_000, 250_000, 500_000, 1_000_000, 2_000_000, 5_000_000, 10_000_000];
+// Snap points aligned to funding stage boundaries:
+//   Pre-seed: $0–$500K  |  Seed: $500K–$3M  |  Series A: $3M–$15M
+//   Series B: $15M–$50M  |  Growth (C+): $50M+
+const SNAP_POINTS = [
+  0,
+  100_000,    // pre-seed
+  500_000,    // seed start
+  1_000_000,  // seed mid
+  3_000_000,  // Series A start
+  10_000_000, // Series A mid
+  15_000_000, // Series B start
+  25_000_000, // Series B mid
+  50_000_000, // Growth start
+  100_000_000, // Growth / no cap
+];
 const MAX_IDX = SNAP_POINTS.length - 1;
-export const BUDGET_UNLIMITED = SNAP_POINTS[MAX_IDX]; // 10_000_000 — sentinel for "no cap"
+export const BUDGET_UNLIMITED = SNAP_POINTS[MAX_IDX]; // 100_000_000 — sentinel for "no cap"
 
 function dollarToIndex(v: number): number {
   // Find the index of the closest snap point
@@ -26,13 +39,14 @@ function rangeLabel(min: number, max: number): string {
   return `${formatBudget(min)} – ${formatBudget(max)}`;
 }
 
-// Tick labels shown below the slider at key indices
+// Tick labels at each stage boundary
 const TICKS: { idx: number; label: string }[] = [
   { idx: 0, label: '$0' },
-  { idx: 3, label: '$250K' },
-  { idx: 5, label: '$1M' },
-  { idx: 7, label: '$5M' },
-  { idx: 8, label: '$10M+' },
+  { idx: 2, label: '$500K' },
+  { idx: 4, label: '$3M' },
+  { idx: 6, label: '$15M' },
+  { idx: 8, label: '$50M' },
+  { idx: 9, label: '$100M+' },
 ];
 
 interface BudgetSliderProps {
