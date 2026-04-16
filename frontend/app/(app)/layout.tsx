@@ -140,6 +140,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen">
+      {/* Skip navigation — must be first focusable element */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:rounded focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-foreground focus:shadow-md focus:ring-2 focus:ring-ring"
+      >
+        Skip to main content
+      </a>
+
       {/* Mobile top bar */}
       <header className="md:hidden fixed top-0 inset-x-0 h-14 border-b border-border bg-background/80 backdrop-blur-sm flex items-center justify-between px-4 z-40">
         <span className="font-semibold text-sm">InvestorMatch</span>
@@ -190,7 +198,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 ml-0 md:ml-56 pt-14 md:pt-0">{children}</main>
+      <main id="main-content" className="flex-1 ml-0 md:ml-56 pt-14 md:pt-0">{children}</main>
     </div>
   );
 }

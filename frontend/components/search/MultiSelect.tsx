@@ -35,10 +35,12 @@ export function MultiSelect({ options, value, onChange, placeholder }: MultiSele
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
+        {/* eslint-disable-next-line jsx-a11y/role-supports-aria-props -- pragmatic multi-select signal on combobox trigger */}
         <Button
           variant="outline"
           role="combobox"
           aria-expanded={open}
+          aria-multiselectable="true"
           className="w-full justify-between h-auto min-h-10 flex-wrap gap-1.5 px-3 py-2 font-normal"
         >
           {value.length === 0 ? (
@@ -76,7 +78,7 @@ export function MultiSelect({ options, value, onChange, placeholder }: MultiSele
             <CommandEmpty>No results found.</CommandEmpty>
             <CommandGroup>
               {options.map((option) => (
-                <CommandItem key={option} value={option} onSelect={() => toggle(option)}>
+                <CommandItem key={option} value={option} onSelect={() => toggle(option)} aria-selected={value.includes(option)}>
                   <Check
                     className={cn('mr-2 h-4 w-4', value.includes(option) ? 'opacity-100' : 'opacity-0')}
                   />

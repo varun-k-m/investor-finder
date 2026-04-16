@@ -7,9 +7,10 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 interface FitScoreRingProps {
   score: number | null;
+  investorId: string;
 }
 
-export function FitScoreRing({ score }: FitScoreRingProps) {
+export function FitScoreRing({ score, investorId }: FitScoreRingProps) {
   if (score === null) return null;
 
   const rounded = Math.round(score);
@@ -20,10 +21,17 @@ export function FitScoreRing({ score }: FitScoreRingProps) {
       : rounded >= 40
         ? 'text-amber-500'
         : 'text-red-400';
+  const titleId = `fit-ring-${investorId}`;
 
   return (
     <div className="relative flex items-center justify-center w-12 h-12 shrink-0">
-      <svg className="w-12 h-12 -rotate-90" viewBox="0 0 48 48">
+      <svg
+        className="w-12 h-12 -rotate-90"
+        viewBox="0 0 48 48"
+        role="img"
+        aria-labelledby={titleId}
+      >
+        <title id={titleId}>Fit score: {rounded} out of 100</title>
         <circle
           cx="24"
           cy="24"
@@ -46,7 +54,7 @@ export function FitScoreRing({ score }: FitScoreRingProps) {
           className={cn('transition-all duration-500', color)}
         />
       </svg>
-      <span className={cn('absolute text-[11px] font-bold rotate-0', color)}>
+      <span aria-hidden="true" className={cn('absolute text-[11px] font-bold rotate-0', color)}>
         {rounded}
       </span>
     </div>

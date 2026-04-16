@@ -107,7 +107,7 @@ export function InvestorCard({
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="cursor-default">
-                  <FitScoreRing score={investor.fit_score} />
+                  <FitScoreRing score={investor.fit_score} investorId={investor.id} />
                 </div>
               </TooltipTrigger>
               {fitTooltip && (
@@ -175,7 +175,7 @@ export function InvestorCard({
             transition={{ duration: 0.35, ease: 'easeOut' }}
             className={cn(
               'inline-flex items-center justify-center rounded-md text-sm font-medium',
-              'h-9 px-3 border transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+              'h-11 sm:h-9 px-3 border transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
               'disabled:pointer-events-none disabled:opacity-50',
               saved && savedStatus
                 ? STATUS_COLORS[savedStatus]
@@ -189,7 +189,7 @@ export function InvestorCard({
                 : 'Save'}
           </motion.button>
 
-          <Button size="sm" variant="outline" onClick={() => setShowPitch(true)}>
+          <Button size="sm" variant="outline" className="sm:h-9 h-11" onClick={() => setShowPitch(true)}>
             Generate Pitch
           </Button>
 

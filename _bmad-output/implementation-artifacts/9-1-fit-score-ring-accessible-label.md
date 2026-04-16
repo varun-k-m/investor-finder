@@ -1,6 +1,6 @@
 # Story 9.1: FitScoreRing SVG accessible label
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -18,16 +18,16 @@ so that I can understand fit quality without relying on the visual ring graphic.
 
 ## Tasks / Subtasks
 
-- [ ] Update `frontend/components/investors/FitScoreRing.tsx` (AC: 1, 2, 3)
-  - [ ] Update `FitScoreRingProps` interface: add `investorId: string` prop
-  - [ ] Add `<title id={`fit-ring-${investorId}`}>Fit score: {rounded} out of 100</title>` as the first child inside `<svg>`
-  - [ ] Add `aria-labelledby={`fit-ring-${investorId}`}` and `role="img"` to the `<svg>` element
+- [x] Update `frontend/components/investors/FitScoreRing.tsx` (AC: 1, 2, 3)
+  - [x] Update `FitScoreRingProps` interface: add `investorId: string` prop
+  - [x] Add `<title id={`fit-ring-${investorId}`}>Fit score: {rounded} out of 100</title>` as the first child inside `<svg>`
+  - [x] Add `aria-labelledby={`fit-ring-${investorId}`}` and `role="img"` to the `<svg>` element
 
-- [ ] Update all call sites that render `<FitScoreRing>` to pass `investorId` (AC: 2)
-  - [ ] `frontend/components/investors/InvestorCard.tsx` — pass `investor.id`
-  - [ ] `frontend/components/saved/SavedBoard.tsx` (InvestorDetailModal) — pass `investor.id`
+- [x] Update all call sites that render `<FitScoreRing>` to pass `investorId` (AC: 2)
+  - [x] `frontend/components/investors/InvestorCard.tsx` — pass `investor.id`
+  - [x] `frontend/components/saved/SavedBoard.tsx` (InvestorDetailModal) — pass `investor.id`
 
-- [ ] Run `npm run typecheck && npm run lint` — zero errors
+- [x] Run `npm run typecheck && npm run lint` — zero errors
 
 ## Dev Notes
 
@@ -126,9 +126,20 @@ The `<title>` element must be the **first child** of `<svg>` for maximum screen 
 ## Dev Agent Record
 
 ### Agent Model Used
+claude-sonnet-4-6
 
 ### Debug Log References
+None — clean implementation.
 
 ### Completion Notes List
+- Added `investorId: string` prop to `FitScoreRingProps` and `FitScoreRing`
+- Added `<title>`, `role="img"`, `aria-labelledby`, `aria-hidden` on visual span
+- Updated call sites: `InvestorCard.tsx`, `SavedBoard.tsx` (InvestorDetailModal)
+- Also updated `FitScoreBadge.tsx` (discovered call site — wraps FitScoreRing) and its call in `SavedBoard.tsx` Kanban card
+- typecheck: 0 errors; lint: 0 warnings/errors
 
 ### File List
+- `frontend/components/investors/FitScoreRing.tsx`
+- `frontend/components/investors/FitScoreBadge.tsx`
+- `frontend/components/investors/InvestorCard.tsx`
+- `frontend/components/saved/SavedBoard.tsx`

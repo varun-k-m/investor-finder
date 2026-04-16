@@ -51,11 +51,6 @@ export function FitBreakdown({ investor, open }: Props) {
                 </div>
               );
             })}
-            {investor.fit_reasoning && (
-              <p className="text-xs text-muted-foreground italic pt-1">
-                {investor.fit_reasoning}
-              </p>
-            )}
           </div>
         </motion.div>
       )}

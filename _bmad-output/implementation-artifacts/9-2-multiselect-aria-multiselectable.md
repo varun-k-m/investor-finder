@@ -1,6 +1,6 @@
 # Story 9.2: MultiSelect announces multi-select capability to assistive technologies
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -18,12 +18,12 @@ so that I understand I can pick more than one option.
 
 ## Tasks / Subtasks
 
-- [ ] Update `frontend/components/search/MultiSelect.tsx` (AC: 1, 2, 3)
-  - [ ] Add `aria-multiselectable="true"` to the `<Button>` trigger element (the `PopoverTrigger` child)
-  - [ ] Verify `aria-expanded` is already on the trigger — it is (line 41: `aria-expanded={open}`)
-  - [ ] Inspect `CommandItem` in `frontend/components/ui/command.tsx` — verify `aria-selected` is set based on selection state; if not, add it
+- [x] Update `frontend/components/search/MultiSelect.tsx` (AC: 1, 2, 3)
+  - [x] Add `aria-multiselectable="true"` to the `<Button>` trigger element (the `PopoverTrigger` child)
+  - [x] Verify `aria-expanded` is already on the trigger — confirmed at line 41
+  - [x] Added `aria-selected={value.includes(option)}` directly on `CommandItem` in `MultiSelect.tsx`
 
-- [ ] Run `npm run typecheck && npm run lint` — zero errors
+- [x] Run `npm run typecheck && npm run lint` — zero errors
 
 ## Dev Notes
 
@@ -101,9 +101,16 @@ This story adds only ARIA attributes. Zero visual change.
 ## Dev Agent Record
 
 ### Agent Model Used
+claude-sonnet-4-6
 
 ### Debug Log References
+None.
 
 ### Completion Notes List
+- Added `aria-multiselectable="true"` to `<Button role="combobox">` trigger
+- Added `aria-selected={value.includes(option)}` on each `CommandItem`
+- Suppressed `jsx-a11y/role-supports-aria-props` lint warning with inline eslint-disable comment (as expected per story dev notes — pragmatic non-spec-pure fix)
+- typecheck: 0 errors; lint: 0 warnings/errors
 
 ### File List
+- `frontend/components/search/MultiSelect.tsx`

@@ -11,6 +11,9 @@ import { INVESTOR_STATUSES } from '@/types/saved-investor';
 import { FitScoreBadge } from '@/components/investors/FitScoreBadge';
 import { FitScoreRing } from '@/components/investors/FitScoreRing';
 import { FitBreakdown } from '@/components/investors/FitBreakdown';
+import { FitReasoningBlock } from '@/components/investors/FitReasoningBlock';
+import { PitchModal } from '@/components/investors/PitchModal';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -57,6 +60,7 @@ interface InvestorDetailModalProps {
 
 function InvestorDetailModal({ item, isUpdating, onClose, onStatusChange }: InvestorDetailModalProps) {
   const [showBreakdown, setShowBreakdown] = useState(true);
+  const [showPitch, setShowPitch] = useState(false);
 
   if (!item) return null;
 
@@ -85,7 +89,7 @@ function InvestorDetailModal({ item, isUpdating, onClose, onStatusChange }: Inve
               </div>
             </div>
             {investor.fit_score !== null && (
-              <FitScoreRing score={investor.fit_score} />
+              <FitScoreRing score={investor.fit_score} investorId={investor.id} />
             )}
           </div>
         </DialogHeader>
@@ -119,6 +123,10 @@ function InvestorDetailModal({ item, isUpdating, onClose, onStatusChange }: Inve
             )}
           </div>
 
+          {investor.fit_reasoning && (
+            <FitReasoningBlock reasoning={investor.fit_reasoning} />
+          )}
+
           <div>
             <button
               type="button"
@@ -130,43 +138,48 @@ function InvestorDetailModal({ item, isUpdating, onClose, onStatusChange }: Inve
             <FitBreakdown investor={investor} open={showBreakdown} />
           </div>
 
-          {(investor.linkedin_url || investor.twitter_url || investor.website) && (
-            <div className="flex items-center gap-3">
-              {investor.linkedin_url && (
-                <a
-                  href={investor.linkedin_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label="LinkedIn"
-                >
-                  <Linkedin className="h-4 w-4" />
-                </a>
-              )}
-              {investor.twitter_url && (
-                <a
-                  href={investor.twitter_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label="Twitter"
-                >
-                  <Twitter className="h-4 w-4" />
-                </a>
-              )}
-              {investor.website && (
-                <a
-                  href={investor.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label="Website"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                </a>
-              )}
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" className="sm:h-9 h-11" onClick={() => setShowPitch(true)}>
+              Generate Pitch
+            </Button>
+            {(investor.linkedin_url || investor.twitter_url || investor.website) && (
+              <div className="flex items-center gap-3 ml-auto">
+                {investor.linkedin_url && (
+                  <a
+                    href={investor.linkedin_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label="LinkedIn"
+                  >
+                    <Linkedin className="h-4 w-4" />
+                  </a>
+                )}
+                {investor.twitter_url && (
+                  <a
+                    href={investor.twitter_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label="Twitter"
+                  >
+                    <Twitter className="h-4 w-4" />
+                  </a>
+                )}
+                {investor.website && (
+                  <a
+                    href={investor.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label="Website"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                )}
+              </div>
+            )}
+          </div>
 
           <div className="border-t border-border pt-3">
             <p className="text-xs font-medium text-muted-foreground mb-2">Move to</p>
@@ -194,6 +207,12 @@ function InvestorDetailModal({ item, isUpdating, onClose, onStatusChange }: Inve
           </div>
         </div>
       </DialogContent>
+      <PitchModal
+        investorId={investor.id}
+        investorName={investor.canonical_name}
+        open={showPitch}
+        onClose={() => setShowPitch(false)}
+      />
     </Dialog>
   );
 }
@@ -288,7 +307,7 @@ export function SavedBoard() {
 
   if (isPending) {
     return (
-      <div className="flex gap-4 overflow-x-auto pb-4">
+      <div className="flex gap-4 overflow-x-auto pb-4" style={{ WebkitOverflowScrolling: 'touch' }}>
         {INVESTOR_STATUSES.map((s) => (
           <SkeletonColumn key={s} />
         ))}
@@ -301,7 +320,7 @@ export function SavedBoard() {
 
   return (
     <>
-      <div className="flex gap-3 overflow-x-auto pb-4 items-start">
+      <div className="flex gap-3 overflow-x-auto pb-4 items-start" style={{ WebkitOverflowScrolling: 'touch' }}>
         {INVESTOR_STATUSES.map((status) => {
           const column = items.filter((i) => i.status === status);
           const isOver = dragOverStatus === status && draggedFromStatus !== status;
@@ -419,7 +438,7 @@ export function SavedBoard() {
                                 {isUpdating ? (
                                   <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground shrink-0 mt-0.5" />
                                 ) : (
-                                  <FitScoreBadge score={item.investor.fit_score} />
+                                  <FitScoreBadge score={item.investor.fit_score} investorId={item.investor.id} />
                                 )}
                               </div>
 

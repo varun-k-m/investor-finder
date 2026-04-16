@@ -1,6 +1,6 @@
 # Story 9.6: SavedBoard horizontal scroll with iOS momentum
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -18,15 +18,14 @@ so that I can navigate all 4 status columns without friction.
 
 ## Tasks / Subtasks
 
-- [ ] Update `frontend/components/saved/SavedBoard.tsx` — Kanban columns wrapper (AC: 1, 2, 3)
-  - [ ] Find the outermost columns wrapper `<div className="flex gap-3 overflow-x-auto pb-4 items-start">` (line ~290)
-  - [ ] `overflow-x-auto` is already present — just needs `-webkit-overflow-scrolling: touch` added
-  - [ ] Add via inline style: `style={{ WebkitOverflowScrolling: 'touch' }}`
+- [x] Update `frontend/components/saved/SavedBoard.tsx` — Kanban columns wrapper (AC: 1, 2, 3)
+  - [x] Main Kanban wrapper: added `style={{ WebkitOverflowScrolling: 'touch' }}`
+  - [x] Skeleton loading wrapper: also added for consistency
 
-- [ ] Verify desktop layout unaffected (AC: 3)
-  - [ ] The existing `flex gap-3` layout shows 4 columns side by side on desktop — `overflow-x-auto` only activates when content exceeds container width (mobile), not on desktop where the full width is available
+- [x] Verify desktop layout unaffected (AC: 3)
+  - [x] `overflow-x-auto` only activates on overflow — desktop 4-col layout fits, no horizontal scroll
 
-- [ ] Run `npm run typecheck && npm run lint` — zero errors
+- [x] Run `npm run typecheck && npm run lint` — zero errors
 
 ## Dev Notes
 
@@ -91,9 +90,14 @@ The skeleton loading state at line 277 also has `overflow-x-auto` — apply the 
 ## Dev Agent Record
 
 ### Agent Model Used
+claude-sonnet-4-6
 
 ### Debug Log References
+None.
 
 ### Completion Notes List
+- Added `style={{ WebkitOverflowScrolling: 'touch' }}` to both the main Kanban wrapper and the skeleton loading wrapper
+- typecheck: 0 errors; lint: 0 warnings/errors
 
 ### File List
+- `frontend/components/saved/SavedBoard.tsx`

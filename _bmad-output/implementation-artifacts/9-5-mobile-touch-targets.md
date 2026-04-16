@@ -1,6 +1,6 @@
 # Story 9.5: Mobile touch target size compliance
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -18,12 +18,11 @@ so that I don't mis-tap or have to zoom in to use the app.
 
 ## Tasks / Subtasks
 
-- [ ] Update action buttons in `frontend/components/investors/InvestorCard.tsx` (AC: 1, 2, 3)
-  - [ ] Locate the Actions row (lines ~148–165): Save button and "Generate Pitch" button both use `size="sm"` (36px height)
-  - [ ] Apply `className` override to increase height to 44px on mobile only, preserve desktop
-  - [ ] Apply same fix to both buttons — Save (or `motion.button` if Story 8.1 is done) and "Generate Pitch"
+- [x] Update action buttons in `frontend/components/investors/InvestorCard.tsx` (AC: 1, 2, 3)
+  - [x] Story 8.1 already done — Save is a `motion.button`; replaced `h-9` with `h-11 sm:h-9` in its className
+  - [x] "Generate Pitch" `<Button>`: added `className="sm:h-9 h-11"` (44px mobile, 36px ≥640px)
 
-- [ ] Run `npm run typecheck && npm run lint` — zero errors
+- [x] Run `npm run typecheck && npm run lint` — zero errors
 
 ## Dev Notes
 
@@ -87,9 +86,16 @@ The social links (LinkedIn, Twitter, Website icons) in the actions row are icon-
 ## Dev Agent Record
 
 ### Agent Model Used
+claude-sonnet-4-6
 
 ### Debug Log References
+None.
 
 ### Completion Notes List
+- Story 8.1 was already implemented — Save button is a `motion.button` (not `<Button>`)
+- Changed `h-9` to `h-11 sm:h-9` in the motion.button className string
+- Added `className="sm:h-9 h-11"` to Generate Pitch `<Button>`
+- typecheck: 0 errors; lint: 0 warnings/errors
 
 ### File List
+- `frontend/components/investors/InvestorCard.tsx`

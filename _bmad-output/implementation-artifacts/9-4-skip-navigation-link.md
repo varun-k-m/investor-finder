@@ -1,6 +1,6 @@
 # Story 9.4: Skip navigation link for keyboard users
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -20,12 +20,12 @@ so that I don't have to tab through every nav link on every page.
 
 ## Tasks / Subtasks
 
-- [ ] Update `frontend/app/(app)/layout.tsx` (AC: 1, 2, 3, 4)
-  - [ ] Add skip link as the very first element inside the outermost `<div className="flex min-h-screen">`
-  - [ ] Add `id="main-content"` to the `<main>` element (currently line ~193: `<main className="flex-1 ml-0 md:ml-56 pt-14 md:pt-0">`)
-  - [ ] Skip link must use `sr-only focus:not-sr-only` pattern (see Dev Notes)
+- [x] Update `frontend/app/(app)/layout.tsx` (AC: 1, 2, 3, 4)
+  - [x] Added skip link as the very first element inside `<div className="flex min-h-screen">`
+  - [x] Added `id="main-content"` to the `<main>` element
+  - [x] Uses `sr-only focus:not-sr-only focus:z-[100]` pattern per spec
 
-- [ ] Run `npm run typecheck && npm run lint` — zero errors
+- [x] Run `npm run typecheck && npm run lint` — zero errors
 
 ## Dev Notes
 
@@ -86,9 +86,16 @@ The layout is already a client component. The `<a>` is a plain HTML anchor — n
 ## Dev Agent Record
 
 ### Agent Model Used
+claude-sonnet-4-6
 
 ### Debug Log References
+None.
 
 ### Completion Notes List
+- Inserted `<a href="#main-content">` as first child of outermost flex div
+- Added `id="main-content"` to `<main>`
+- Uses Tailwind `sr-only focus:not-sr-only focus:z-[100]` pattern exactly as specified
+- typecheck: 0 errors; lint: 0 warnings/errors
 
 ### File List
+- `frontend/app/(app)/layout.tsx`
