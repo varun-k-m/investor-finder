@@ -7,6 +7,7 @@ import { Linkedin, Twitter, ExternalLink, DollarSign } from 'lucide-react';
 import type { InvestorProfile } from '@/types/investor';
 import { FitScoreRing } from './FitScoreRing';
 import { FitBreakdown } from './FitBreakdown';
+import { FitReasoningBlock } from './FitReasoningBlock';
 import { PitchModal } from './PitchModal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -133,6 +134,11 @@ export function InvestorCard({
             <span>🌍 {investor.geo_focus.slice(0, 3).join(', ')}</span>
           )}
         </div>
+
+        {/* Fit reasoning */}
+        {investor.fit_reasoning && (
+          <FitReasoningBlock reasoning={investor.fit_reasoning} />
+        )}
 
         {/* Fit Details toggle */}
         <button

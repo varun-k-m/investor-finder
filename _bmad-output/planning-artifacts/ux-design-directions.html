@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InvestorMatch — UX Design Directions</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: hsl(0 0% 100%);
+      --fg: hsl(222.2 84% 4.9%);
+      --card: hsl(0 0% 100%);
+      --primary: hsl(222.2 47.4% 11.2%);
+      --primary-fg: hsl(210 40% 98%);
+      --muted: hsl(210 40% 96.1%);
+      --muted-fg: hsl(215.4 16.3% 46.9%);
+      --border: hsl(214.3 31.8% 91.4%);
+      --destructive: hsl(0 84.2% 60.2%);
+      --radius: 0.5rem;
+      --brand: hsl(221 83% 53%);
+      --brand-light: hsl(221 83% 96%);
+      --indigo: hsl(239 84% 67%);
+      --violet: hsl(263 70% 64%);
+      --purple: hsl(280 65% 60%);
+      --green: hsl(142 72% 29%);
+      --amber-bg: hsl(48 100% 96%);
+      --amber-border: hsl(45 93% 47% / 0.4);
+      --amber-fg: hsl(32 95% 24%);
+      --amber-text: hsl(28 73% 26%);
+      --font: 'Plus Jakarta Sans', system-ui, sans-serif;
+      --mono: 'JetBrains Mono', monospace;
+    }
+
+    body {
+      font-family: var(--font);
+      background: hsl(220 14% 96%);
+      color: var(--fg);
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    .page-header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 2rem 2.5rem 1.5rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .page-header h1 { font-size: 1.25rem; font-weight: 700; }
+    .page-header p { font-size: 0.875rem; color: var(--muted-fg); margin-top: 0.25rem; }
+    .nav-pills { display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap; }
+    .pill {
+      font-size: 0.75rem; font-weight: 500;
+      padding: 0.375rem 0.75rem;
+      border-radius: 9999px;
+      border: 1px solid var(--border);
+      background: var(--muted);
+      color: var(--muted-fg);
+      cursor: pointer;
+      transition: all 0.15s;
+      text-decoration: none;
+    }
+    .pill:hover, .pill.active {
+      background: var(--primary);
+      color: var(--primary-fg);
+      border-color: var(--primary);
+    }
+
+    /* ── Layout ── */
+    .container { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2rem; }
+    .direction-section {
+      margin-bottom: 4rem;
+      scroll-margin-top: 100px;
+    }
+    .section-header {
+      display: flex; align-items: flex-start; gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .direction-badge {
+      font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 0.25rem 0.625rem;
+      border-radius: 9999px;
+      flex-shrink: 0;
+      margin-top: 0.25rem;
+    }
+    .badge-a { background: hsl(239 84% 67% / 0.12); color: hsl(239 84% 50%); }
+    .badge-b { background: hsl(142 72% 29% / 0.1); color: hsl(142 72% 25%); }
+    .badge-c { background: hsl(32 95% 44% / 0.12); color: hsl(32 95% 30%); }
+    .badge-d { background: hsl(263 70% 64% / 0.12); color: hsl(263 70% 45%); }
+
+    .section-title { font-size: 1.375rem; font-weight: 700; line-height: 1.3; }
+    .section-sub { font-size: 0.875rem; color: var(--muted-fg); margin-top: 0.375rem; line-height: 1.5; }
+
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+    @media (max-width: 900px) { .compare-grid { grid-template-columns: 1fr; } }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      overflow: hidden;
+    }
+    .panel-label {
+      padding: 0.75rem 1.25rem;
+      font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .label-current { background: hsl(0 0% 98%); color: var(--muted-fg); }
+    .label-proposed { background: hsl(221 83% 97%); color: hsl(221 83% 45%); }
+    .label-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .dot-current { background: var(--muted-fg); }
+    .dot-proposed { background: hsl(221 83% 53%); }
+    .panel-body { padding: 1.5rem; }
+
+    /* ── Insight callout ── */
+    .insight {
+      background: hsl(221 83% 97%);
+      border: 1px solid hsl(221 83% 87%);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      font-size: 0.8125rem;
+      color: hsl(221 83% 35%);
+      margin-bottom: 2rem;
+      line-height: 1.55;
+    }
+    .insight strong { color: hsl(221 83% 25%); }
+
+    /* ══════════════════════════════════════════
+       DIRECTION A — InvestorCard
+    ══════════════════════════════════════════ */
+    .investor-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      background: var(--card);
+    }
+    .investor-card:hover { border-color: hsl(222.2 47.4% 11.2% / 0.4); }
+    .card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; margin-bottom: 0.75rem; }
+    .avatar {
+      width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8125rem; font-weight: 600; color: white;
+    }
+    .avatar-indigo { background: hsl(239 84% 67%); }
+    .avatar-violet { background: hsl(263 70% 64%); }
+    .avatar-blue { background: hsl(221 83% 53%); }
+
+    .investor-name { font-size: 1rem; font-weight: 600; line-height: 1.3; }
+    .investor-fund { font-size: 0.8125rem; color: var(--muted-fg); }
+
+    .fit-ring {
+      flex-shrink: 0;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .fit-ring svg { display: block; }
+    .fit-score-label { font-size: 0.5625rem; font-weight: 700; color: var(--muted-fg); letter-spacing: 0.04em; text-transform: uppercase; margin-top: 2px; }
+
+    .badges { display: flex; flex-wrap: wrap; gap: 0.375rem; margin-bottom: 0.75rem; }
+    .badge {
+      font-size: 0.6875rem; font-weight: 500;
+      padding: 0.2rem 0.5rem;
+      border-radius: calc(var(--radius) - 2px);
+      border: 1px solid var(--border);
+    }
+    .badge-secondary { background: var(--muted); color: var(--fg); border-color: transparent; }
+    .badge-outline { background: transparent; color: var(--muted-fg); }
+
+    .meta { display: flex; gap: 1rem; font-size: 0.75rem; color: var(--muted-fg); margin-bottom: 0.75rem; align-items: center; flex-wrap: wrap; }
+
+    /* Current: fit_reasoning hidden in toggle */
+    .fit-toggle {
+      font-size: 0.75rem; color: var(--muted-fg);
+      text-decoration: underline; text-decoration-style: dotted;
+      background: none; border: none; cursor: pointer; padding: 0;
+      margin-bottom: 0.75rem;
+    }
+    .fit-breakdown-collapsed {
+      background: var(--muted);
+      border-radius: calc(var(--radius) - 2px);
+      padding: 0.75rem;
+      font-size: 0.75rem; color: var(--muted-fg);
+      font-style: italic;
+      margin-bottom: 0.75rem;
+      display: none; /* hidden by default */
+    }
+
+    /* Proposed: fit_reasoning always visible */
+    .fit-reasoning-visible {
+      border-left: 2px solid hsl(221 83% 53% / 0.35);
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8125rem;
+      color: var(--muted-fg);
+      font-style: italic;
+      line-height: 1.55;
+      margin-bottom: 0.75rem;
+      background: hsl(221 83% 98%);
+      border-radius: 0 calc(var(--radius) - 2px) calc(var(--radius) - 2px) 0;
+    }
+    .fit-reasoning-label {
+      font-size: 0.625rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+      color: hsl(221 83% 53%);
+      margin-bottom: 0.25rem;
+      font-style: normal;
+    }
+
+    .card-actions { display: flex; gap: 0.5rem; align-items: center; }
+    .btn {
+      font-size: 0.8125rem; font-weight: 500;
+      padding: 0.375rem 0.875rem;
+      border-radius: calc(var(--radius) - 2px);
+      border: 1px solid var(--border);
+      background: var(--card);
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: var(--font);
+    }
+    .btn:hover { background: var(--muted); }
+    .btn-primary {
+      background: var(--primary);
+      color: var(--primary-fg);
+      border-color: var(--primary);
+    }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-brand {
+      background: hsl(221 83% 53%);
+      color: white;
+      border-color: hsl(221 83% 53%);
+    }
+    .btn-brand:hover { background: hsl(221 83% 47%); }
+    .btn-saved {
+      background: hsl(142 72% 29% / 0.08);
+      color: hsl(142 72% 29%);
+      border-color: hsl(142 72% 29% / 0.3);
+    }
+
+    .social-links { display: flex; gap: 0.5rem; margin-left: auto; align-items: center; }
+    .social-icon {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--muted);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.6875rem; color: var(--muted-fg);
+      text-decoration: none;
+      transition: all 0.15s;
+    }
+    .social-icon:hover { background: hsl(221 83% 53%); color: white; }
+
+    /* ══════════════════════════════════════════
+       DIRECTION B — IdeaForm
+    ══════════════════════════════════════════ */
+    .form-wrapper { max-width: 560px; }
+    .form-field { margin-bottom: 1.25rem; }
+    .form-label { font-size: 0.875rem; font-weight: 500; display: block; margin-bottom: 0.375rem; }
+    .form-label-muted { color: var(--muted-fg); font-weight: 400; }
+    .form-textarea {
+      width: 100%; border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 0.75rem;
+      font-size: 0.875rem; font-family: var(--font);
+      resize: none; outline: none;
+      background: var(--card); color: var(--fg);
+      transition: border-color 0.15s;
+      line-height: 1.5;
+    }
+    .form-textarea:focus { border-color: var(--primary); }
+    .form-textarea::placeholder { color: var(--muted-fg); }
+    .char-row { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted-fg); margin-top: 0.25rem; }
+    .multiselect-mock {
+      width: 100%; border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 0.5rem 0.75rem;
+      font-size: 0.875rem; color: var(--muted-fg);
+      background: var(--card);
+      display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer;
+    }
+    .multiselect-mock svg { color: var(--muted-fg); }
+
+    /* Proposed: refine toggle */
+    .refine-toggle-btn {
+      display: flex; align-items: center; gap: 0.375rem;
+      font-size: 0.8125rem; font-weight: 500; color: var(--muted-fg);
+      background: none; border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.5rem 0.875rem;
+      cursor: pointer; width: 100%;
+      margin-bottom: 0.75rem;
+      transition: all 0.15s;
+      font-family: var(--font);
+      justify-content: center;
+    }
+    .refine-toggle-btn:hover { border-color: var(--primary); color: var(--fg); background: var(--muted); }
+    .refine-panel {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+      background: var(--muted);
+      display: grid; gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .refine-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .refine-label { font-size: 0.75rem; font-weight: 500; display: block; margin-bottom: 0.25rem; }
+    .refine-label .opt { font-weight: 400; color: var(--muted-fg); }
+
+    /* ══════════════════════════════════════════
+       DIRECTION C — Quota / Limit Framing
+    ══════════════════════════════════════════ */
+    /* Current: amber warning */
+    .quota-warning {
+      background: var(--amber-bg);
+      border: 1px solid var(--amber-border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .quota-warning-title { font-size: 0.875rem; font-weight: 600; color: var(--amber-fg); }
+    .quota-warning-body { font-size: 0.875rem; color: var(--amber-text); margin-top: 0.25rem; line-height: 1.5; }
+    .quota-warning-body a { color: var(--amber-fg); font-weight: 500; }
+
+    /* Proposed: milestone card */
+    .milestone-card {
+      border: 1px solid hsl(221 83% 87%);
+      background: hsl(221 83% 97%);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .milestone-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+    .milestone-icon {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: hsl(221 83% 53%);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+    .milestone-title { font-size: 0.9375rem; font-weight: 700; color: hsl(221 83% 25%); }
+    .milestone-sub { font-size: 0.8125rem; color: hsl(221 83% 40%); margin-top: 0.25rem; line-height: 1.5; }
+    .progress-track {
+      height: 6px; background: hsl(221 83% 87%); border-radius: 9999px;
+      margin: 0.875rem 0 0.5rem; overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%; border-radius: 9999px;
+      background: hsl(221 83% 53%);
+      width: 100%;
+    }
+    .progress-label { font-size: 0.75rem; color: hsl(221 83% 40%); display: flex; justify-content: space-between; }
+    .milestone-cta {
+      display: block; width: 100%;
+      margin-top: 1rem;
+      background: hsl(221 83% 53%);
+      color: white;
+      border: none; border-radius: var(--radius);
+      padding: 0.625rem;
+      font-size: 0.875rem; font-weight: 600; font-family: var(--font);
+      cursor: pointer; text-align: center;
+      transition: background 0.15s;
+    }
+    .milestone-cta:hover { background: hsl(221 83% 47%); }
+    .milestone-bottom { font-size: 0.75rem; color: hsl(221 83% 45%); text-align: center; margin-top: 0.5rem; }
+
+    /* ══════════════════════════════════════════
+       DIRECTION D — Save Button States
+    ══════════════════════════════════════════ */
+    .save-demo { display: flex; flex-direction: column; gap: 1.5rem; }
+    .save-row { display: flex; align-items: center; gap: 1rem; }
+    .save-state-label {
+      font-size: 0.75rem; font-weight: 500; color: var(--muted-fg);
+      width: 80px; flex-shrink: 0;
+    }
+
+    /* Current: flat text swap */
+    .btn-save-current-unsaved { }
+    .btn-save-current-saved {
+      background: var(--muted);
+      color: var(--muted-fg);
+      border-color: transparent;
+    }
+
+    /* Proposed: animated ring + checkmark */
+    .btn-save-proposed {
+      display: flex; align-items: center; gap: 0.5rem;
+      font-size: 0.8125rem; font-weight: 500;
+      padding: 0.375rem 0.875rem;
+      border-radius: calc(var(--radius) - 2px);
+      border: 1px solid var(--border);
+      background: var(--card);
+      cursor: pointer;
+      font-family: var(--font);
+      transition: all 0.2s;
+    }
+    .btn-save-proposed.unsaved:hover { border-color: hsl(221 83% 53%); color: hsl(221 83% 53%); }
+    .btn-save-proposed.saved {
+      background: hsl(142 72% 29% / 0.08);
+      color: hsl(142 72% 29%);
+      border-color: hsl(142 72% 29% / 0.3);
+      transform: scale(1.03);
+    }
+    .save-check {
+      width: 16px; height: 16px; border-radius: 50%;
+      background: hsl(142 72% 29%);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.625rem; color: white;
+      flex-shrink: 0;
+    }
+
+    .save-compare-note {
+      font-size: 0.8125rem; color: var(--muted-fg);
+      line-height: 1.55;
+      padding: 0.875rem 1rem;
+      background: var(--muted);
+      border-radius: var(--radius);
+      margin-top: 0.5rem;
+    }
+
+    /* Kanban mini preview */
+    .kanban-preview { display: flex; gap: 0.75rem; margin-top: 1.5rem; overflow-x: auto; padding-bottom: 0.5rem; }
+    .kanban-col {
+      flex: 0 0 140px;
+      background: var(--muted);
+      border-radius: var(--radius);
+      padding: 0.75rem;
+    }
+    .kanban-col-title { font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted-fg); margin-bottom: 0.625rem; }
+    .kanban-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: calc(var(--radius) - 2px);
+      padding: 0.5rem 0.625rem;
+      font-size: 0.75rem; font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+    .kanban-item.new {
+      border-color: hsl(142 72% 29% / 0.4);
+      background: hsl(142 72% 29% / 0.05);
+      color: hsl(142 72% 29%);
+      animation: pop-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes pop-in {
+      from { transform: scale(0.85); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .kanban-empty { font-size: 0.75rem; color: var(--muted-fg); font-style: italic; padding: 0.25rem 0; }
+
+    /* ── Summary Table ── */
+    .summary-section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      padding: 2rem;
+      margin-top: 2rem;
+    }
+    .summary-section h2 { font-size: 1.125rem; font-weight: 700; margin-bottom: 1.25rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    th { text-align: left; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted-fg); padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); }
+    td { padding: 0.875rem 1rem; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.5; }
+    tr:last-child td { border-bottom: none; }
+    .impact-high { color: hsl(142 72% 29%); font-weight: 600; }
+    .impact-med { color: hsl(32 95% 34%); font-weight: 600; }
+    .effort-low { color: hsl(221 83% 53%); font-weight: 600; }
+    .effort-med { color: var(--muted-fg); font-weight: 600; }
+
+    /* ── Responsive ── */
+    @media (max-width: 640px) {
+      .page-header { padding: 1.25rem 1rem 1rem; }
+      .container { padding: 1.5rem 1rem; }
+      .refine-row { grid-template-columns: 1fr; }
+      .kanban-preview { gap: 0.5rem; }
+      .kanban-col { flex: 0 0 120px; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="page-header">
+  <div style="max-width:1280px;margin:0 auto;">
+    <h1>InvestorMatch — UX Design Directions</h1>
+    <p>Four high-impact improvement opportunities for Sprint 7+, grounded in the UX Design Specification</p>
+    <nav class="nav-pills">
+      <a href="#direction-a" class="pill active">A · Intelligence First</a>
+      <a href="#direction-b" class="pill">B · Progressive Form</a>
+      <a href="#direction-c" class="pill">C · Milestone Limit</a>
+      <a href="#direction-d" class="pill">D · Accomplished Save</a>
+    </nav>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- ══ DIRECTION A ══ -->
+  <section class="direction-section" id="direction-a">
+    <div class="section-header">
+      <span class="direction-badge badge-a">Direction A</span>
+      <div>
+        <div class="section-title">Intelligence First — fit_reasoning Above the Fold</div>
+        <div class="section-sub">The product's highest-value content is currently hidden in a collapsed accordion. Surfacing it changes the perceived value of every result.</div>
+      </div>
+    </div>
+
+    <div class="insight">
+      <strong>Why this matters:</strong> The <code>fit_reasoning</code> field is Claude's plain-English explanation of why an investor fits this specific startup. It's the feature that turns a list into intelligence — and the thing founders screenshot and share. Currently it requires clicking "Show Fit Details." Most users never click it. Moving it above the fold is the single highest-ROI UX change in the product.
+    </div>
+
+    <div class="compare-grid">
+      <!-- Current -->
+      <div class="panel">
+        <div class="panel-label label-current">
+          <span class="label-dot dot-current"></span> Current — fit_reasoning hidden
+        </div>
+        <div class="panel-body">
+          <div class="investor-card">
+            <div class="card-header">
+              <div style="display:flex;align-items:center;gap:0.75rem;min-width:0;">
+                <div class="avatar avatar-indigo">SC</div>
+                <div style="min-width:0;">
+                  <div class="investor-name">Sequoia Capital</div>
+                  <div class="investor-fund">Sequoia Capital India</div>
+                </div>
+              </div>
+              <div class="fit-ring">
+                <svg width="52" height="52" viewBox="0 0 52 52">
+                  <circle cx="26" cy="26" r="20" fill="none" stroke="hsl(210 40% 91%)" stroke-width="5"/>
+                  <circle cx="26" cy="26" r="20" fill="none" stroke="hsl(222.2 47.4% 11.2%)" stroke-width="5"
+                    stroke-dasharray="125.6" stroke-dashoffset="12.56" stroke-linecap="round"
+                    transform="rotate(-90 26 26)"/>
+                  <text x="26" y="26" text-anchor="middle" dominant-baseline="central"
+                    font-size="12" font-weight="700" font-family="'Plus Jakarta Sans',sans-serif"
+                    fill="hsl(222.2 84% 4.9%)">90</text>
+                </svg>
+                <div class="fit-score-label">Fit</div>
+              </div>
+            </div>
+            <div class="badges">
+              <span class="badge badge-secondary">B2B SaaS</span>
+              <span class="badge badge-secondary">Fintech</span>
+              <span class="badge badge-outline">Seed</span>
+              <span class="badge badge-outline">Series A</span>
+            </div>
+            <div class="meta">
+              <span>💵 $250K – $2M</span>
+              <span>🌍 USA, India, Southeast Asia</span>
+            </div>
+            <button class="fit-toggle">▾ Show Fit Details</button>
+            <div class="card-actions">
+              <button class="btn">Save</button>
+              <button class="btn">Generate Pitch</button>
+              <div class="social-links">
+                <a class="social-icon" title="LinkedIn">in</a>
+                <a class="social-icon" title="Twitter">𝕏</a>
+                <a class="social-icon" title="Website">↗</a>
+              </div>
+            </div>
+          </div>
+          <p style="font-size:0.75rem;color:var(--muted-fg);margin-top:1rem;line-height:1.55;">
+            The AI reasoning is hidden behind "Show Fit Details." Most founders never click it — they scan the score number and move on without understanding why the match was made.
+          </p>
+        </div>
+      </div>
+
+      <!-- Proposed -->
+      <div class="panel">
+        <div class="panel-label label-proposed">
+          <span class="label-dot dot-proposed"></span> Proposed — fit_reasoning always visible
+        </div>
+        <div class="panel-body">
+          <div class="investor-card" style="border-color:hsl(221 83% 80%);">
+            <div class="card-header">
+              <div style="display:flex;align-items:center;gap:0.75rem;min-width:0;">
+                <div class="avatar avatar-indigo">SC</div>
+                <div style="min-width:0;">
+                  <div class="investor-name">Sequoia Capital</div>
+                  <div class="investor-fund">Sequoia Capital India</div>
+                </div>
+              </div>
+              <div class="fit-ring">
+                <svg width="52" height="52" viewBox="0 0 52 52">
+                  <circle cx="26" cy="26" r="20" fill="none" stroke="hsl(221 83% 90%)" stroke-width="5"/>
+                  <circle cx="26" cy="26" r="20" fill="none" stroke="hsl(221 83% 53%)" stroke-width="5"
+                    stroke-dasharray="125.6" stroke-dashoffset="12.56" stroke-linecap="round"
+                    transform="rotate(-90 26 26)"/>
+                  <text x="26" y="26" text-anchor="middle" dominant-baseline="central"
+                    font-size="12" font-weight="700" font-family="'Plus Jakarta Sans',sans-serif"
+                    fill="hsl(221 83% 35%)">90</text>
+                </svg>
+                <div class="fit-score-label" style="color:hsl(221 83% 53%);">Fit</div>
+              </div>
+            </div>
+            <div class="badges">
+              <span class="badge badge-secondary">B2B SaaS</span>
+              <span class="badge badge-secondary">Fintech</span>
+              <span class="badge badge-outline">Seed</span>
+              <span class="badge badge-outline">Series A</span>
+            </div>
+            <div class="meta">
+              <span>💵 $250K – $2M</span>
+              <span>🌍 USA, India, Southeast Asia</span>
+            </div>
+            <!-- Always-visible fit_reasoning -->
+            <div class="fit-reasoning-visible">
+              <div class="fit-reasoning-label">Why this match</div>
+              Sequoia's consistent investment in B2B API-first tools and $250K–$2M seed range directly maps to your infrastructure play. Their India + Southeast Asia portfolio suggests appetite for the market you're targeting.
+            </div>
+            <div class="card-actions">
+              <button class="btn">Save</button>
+              <button class="btn btn-brand">Generate Pitch</button>
+              <div class="social-links">
+                <a class="social-icon" title="LinkedIn">in</a>
+                <a class="social-icon" title="Twitter">𝕏</a>
+                <a class="social-icon" title="Website">↗</a>
+              </div>
+            </div>
+          </div>
+          <p style="font-size:0.75rem;color:var(--muted-fg);margin-top:1rem;line-height:1.55;">
+            The AI reasoning is always visible with a left-accent treatment (italic, muted, blue-left-border). "Generate Pitch" is promoted to <code>btn-brand</code> since it's the natural next action after reading fit_reasoning. No accordion needed.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ DIRECTION B ══ -->
+  <section class="direction-section" id="direction-b">
+    <div class="section-header">
+      <span class="direction-badge badge-b">Direction B</span>
+      <div>
+        <div class="section-title">Progressive Form — Textarea Hero, Filters Collapsed</div>
+        <div class="section-sub">First-time founders see 6 fields upfront. The textarea should be the entire first screen. Filters reveal only when the user wants to refine.</div>
+      </div>
+    </div>
+
+    <div class="insight">
+      <strong>Why this matters:</strong> All 6 fields are currently shown on load (textarea + 3 multi-selects + budget slider). A first-time founder faces a form when they want to describe their company. The textarea is the right instinct — it's the only truly required input. Collapsing the optional filters behind "Refine search" removes cognitive load without hiding functionality that power users need.
+    </div>
+
+    <div class="compare-grid">
+      <!-- Current -->
+      <div class="panel">
+        <div class="panel-label label-current">
+          <span class="label-dot dot-current"></span> Current — all 6 fields visible
+        </div>
+        <div class="panel-body">
+          <div class="form-wrapper">
+            <div class="form-field">
+              <label class="form-label">Describe your startup</label>
+              <textarea class="form-textarea" rows="5" placeholder="Describe your startup idea, target market, and funding needs..." readonly></textarea>
+              <div class="char-row"><span></span><span>0 / 20 min</span></div>
+            </div>
+            <div class="form-field">
+              <label class="form-label">Sectors <span class="form-label-muted">(optional)</span></label>
+              <div class="multiselect-mock">
+                <span>Select sectors (optional)</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+            </div>
+            <div class="form-field">
+              <label class="form-label">Stage <span class="form-label-muted">(optional)</span></label>
+              <div class="multiselect-mock">
+                <span>Select stages (optional)</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+            </div>
+            <div class="form-field">
+              <label class="form-label">Geography <span class="form-label-muted">(optional)</span></label>
+              <div class="multiselect-mock">
+                <span>Select geographies (optional)</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+            </div>
+            <div class="form-field">
+              <label class="form-label">Check size range <span class="form-label-muted">(optional)</span></label>
+              <div style="height:32px;background:var(--muted);border-radius:var(--radius);display:flex;align-items:center;padding:0 0.75rem;">
+                <div style="height:4px;flex:1;background:var(--border);border-radius:9999px;position:relative;">
+                  <div style="position:absolute;left:0;right:0;height:4px;background:var(--primary);border-radius:9999px;"></div>
+                </div>
+              </div>
+            </div>
+            <button class="btn btn-primary" style="width:100%;padding:0.625rem;font-size:0.9375rem;">Find Investors</button>
+          </div>
+          <p style="font-size:0.75rem;color:var(--muted-fg);margin-top:1rem;line-height:1.55;">
+            5 fields visible before the CTA. A first-time founder must mentally process all of them before submitting — even if they only need the textarea.
+          </p>
+        </div>
+      </div>
+
+      <!-- Proposed -->
+      <div class="panel">
+        <div class="panel-label label-proposed">
+          <span class="label-dot dot-proposed"></span> Proposed — textarea first, filters on demand
+        </div>
+        <div class="panel-body">
+          <div class="form-wrapper">
+            <div class="form-field">
+              <label class="form-label">Describe your startup</label>
+              <textarea class="form-textarea" rows="6" placeholder="Tell us about your startup — what you're building, who you're building it for, and what stage you're at. The more specific, the better your matches." readonly></textarea>
+              <div class="char-row">
+                <span style="color:hsl(221 83% 53%);font-weight:500;">✓ Great — ready to find investors</span>
+                <span>147 / 20 min</span>
+              </div>
+            </div>
+            <!-- Refine toggle (collapsed state) -->
+            <button class="refine-toggle-btn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+              Refine search (sector, stage, geo, check size)
+            </button>
+            <!-- Refine panel (expanded state preview) -->
+            <div class="refine-panel">
+              <div class="refine-row">
+                <div>
+                  <label class="refine-label">Sectors <span class="opt">(optional)</span></label>
+                  <div class="multiselect-mock" style="font-size:0.8125rem;">
+                    <span>Any sector</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                  </div>
+                </div>
+                <div>
+                  <label class="refine-label">Stage <span class="opt">(optional)</span></label>
+                  <div class="multiselect-mock" style="font-size:0.8125rem;">
+                    <span>Any stage</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                  </div>
+                </div>
+              </div>
+              <div class="refine-row">
+                <div>
+                  <label class="refine-label">Geography <span class="opt">(optional)</span></label>
+                  <div class="multiselect-mock" style="font-size:0.8125rem;">
+                    <span>Anywhere</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                  </div>
+                </div>
+                <div>
+                  <label class="refine-label">Check size <span class="opt">(optional)</span></label>
+                  <div class="multiselect-mock" style="font-size:0.8125rem;">
+                    <span>Any amount</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <button class="btn btn-brand" style="width:100%;padding:0.625rem;font-size:0.9375rem;">Find Investors</button>
+          </div>
+          <p style="font-size:0.75rem;color:var(--muted-fg);margin-top:1rem;line-height:1.55;">
+            Textarea is the hero. Filters are grouped in a single "Refine search" toggle (shown here expanded). First-time founders can submit immediately; returning users open the panel to refine. No new components needed — this is a conditional render.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ DIRECTION C ══ -->
+  <section class="direction-section" id="direction-c">
+    <div class="section-header">
+      <span class="direction-badge badge-c">Direction C</span>
+      <div>
+        <div class="section-title">Milestone Limit — Quota as Progress, Not Punishment</div>
+        <div class="section-sub">The current quota error reads as a wall. Reframing it as a milestone card turns a frustrating moment into a motivating one.</div>
+      </div>
+    </div>
+
+    <div class="insight">
+      <strong>Why this matters:</strong> "Monthly limit reached" is a punitive framing. Founders who hit the quota have already gotten value from the product — they've run 3 searches. That's a win. Showing "3/3 searches used this month" with a progress bar acknowledges their usage positively before presenting the upgrade path.
+    </div>
+
+    <div class="compare-grid">
+      <!-- Current -->
+      <div class="panel">
+        <div class="panel-label label-current">
+          <span class="label-dot dot-current"></span> Current — warning banner
+        </div>
+        <div class="panel-body">
+          <div class="quota-warning">
+            <div class="quota-warning-title">Monthly limit reached</div>
+            <div class="quota-warning-body">
+              You've used all 3 free searches this month.
+              <a href="#">Upgrade to Pro</a> for unlimited searches.
+            </div>
+          </div>
+          <button class="btn btn-primary" style="width:100%;padding:0.625rem;" disabled>Find Investors</button>
+          <p style="font-size:0.75rem;color:var(--muted-fg);margin-top:1rem;line-height:1.55;">
+            Amber warning banner feels like an error state. The upgrade link is inline text — easy to miss. The disabled "Find Investors" button creates a dead end.
+          </p>
+        </div>
+      </div>
+
+      <!-- Proposed -->
+      <div class="panel">
+        <div class="panel-label label-proposed">
+          <span class="label-dot dot-proposed"></span> Proposed — milestone card
+        </div>
+        <div class="panel-body">
+          <div class="milestone-card">
+            <div class="milestone-top">
+              <div>
+                <div class="milestone-title">3 searches completed this month</div>
+                <div class="milestone-sub">You've found investors for 3 ideas. Upgrade to Pro to keep the momentum going — unlimited searches, every month.</div>
+              </div>
+              <div class="milestone-icon">🎯</div>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill"></div>
+            </div>
+            <div class="progress-label">
+              <span>3 searches used</span>
+              <span>3 / 3 this month</span>
+            </div>
+            <button class="milestone-cta">Upgrade to Pro — Unlimited Searches ✨</button>
+            <div class="milestone-bottom">Plans start at $29/mo · Cancel anytime</div>
+          </div>
+          <p style="font-size:0.75rem;color:var(--muted-fg);margin-top:1rem;line-height:1.55;">
+            Blue milestone card acknowledges the founder's usage positively. Full-width upgrade CTA is prominent and action-oriented. Progress bar at 100% signals completion (not failure). Pricing context reduces anxiety.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ DIRECTION D ══ -->
+  <section class="direction-section" id="direction-d">
+    <div class="section-header">
+      <span class="direction-badge badge-d">Direction D</span>
+      <div>
+        <div class="section-title">Accomplished Save — Confirming Progress Feels Real</div>
+        <div class="section-sub">The Save action currently swaps text labels. A micro-animation on save confirmation reinforces the "accomplished" emotional goal and makes CRM adoption feel rewarding.</div>
+      </div>
+    </div>
+
+    <div class="insight">
+      <strong>Why this matters:</strong> Saving an investor is the moment a founder moves from discovery to action. The current label swap ("Save" → "Saved ✓") is functionally correct but emotionally flat. A brief scale animation + green confirmation state tells the founder: <em>you did something real just now.</em> This is the habit-formation trigger for SavedBoard adoption.
+    </div>
+
+    <div class="compare-grid">
+      <!-- Current -->
+      <div class="panel">
+        <div class="panel-label label-current">
+          <span class="label-dot dot-current"></span> Current — flat text swap
+        </div>
+        <div class="panel-body">
+          <div class="save-demo">
+            <div>
+              <div class="save-row">
+                <div class="save-state-label">Unsaved</div>
+                <button class="btn btn-save-current-unsaved">Save</button>
+              </div>
+              <div style="height:1rem;"></div>
+              <div class="save-row">
+                <div class="save-state-label">Saved</div>
+                <button class="btn btn-save-current-saved" disabled>Saved ✓</button>
+              </div>
+              <div style="height:1rem;"></div>
+              <div class="save-row">
+                <div class="save-state-label">Contacted</div>
+                <button class="btn btn-save-current-saved" disabled>Contacted ✓</button>
+              </div>
+            </div>
+            <div class="save-compare-note">
+              Text label swap only. No visual distinction beyond the disabled state. The "Saved ✓" text is smaller than a typical confirmation — founders may wonder if the click registered.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Proposed -->
+      <div class="panel">
+        <div class="panel-label label-proposed">
+          <span class="label-dot dot-proposed"></span> Proposed — animated confirmation state
+        </div>
+        <div class="panel-body">
+          <div class="save-demo">
+            <div>
+              <div class="save-row">
+                <div class="save-state-label">Unsaved</div>
+                <button class="btn-save-proposed unsaved">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                  Save
+                </button>
+              </div>
+              <div style="height:1rem;"></div>
+              <div class="save-row">
+                <div class="save-state-label">Just saved</div>
+                <button class="btn-save-proposed saved">
+                  <span class="save-check">✓</span>
+                  Saved
+                </button>
+              </div>
+              <div style="height:1rem;"></div>
+              <div class="save-row">
+                <div class="save-state-label">Contacted</div>
+                <button class="btn-save-proposed saved" style="color:hsl(221 83% 45%);border-color:hsl(221 83% 70%);background:hsl(221 83% 97%);">
+                  <span class="save-check" style="background:hsl(221 83% 53%);">✓</span>
+                  Contacted
+                </button>
+              </div>
+            </div>
+            <div class="save-compare-note">
+              Green filled circle checkmark + scale(1.03) animation on save. Green background tint matches the "accomplished" emotional goal. Different status colors (green = saved, blue = contacted) help founders track stage at a glance without opening SavedBoard.
+            </div>
+
+            <!-- Mini Kanban -->
+            <div>
+              <div style="font-size:0.75rem;font-weight:600;margin-bottom:0.625rem;">SavedBoard — investor appears immediately after save</div>
+              <div class="kanban-preview">
+                <div class="kanban-col">
+                  <div class="kanban-col-title">Saved</div>
+                  <div class="kanban-item new">Sequoia Capital</div>
+                  <div class="kanban-item">a16z</div>
+                </div>
+                <div class="kanban-col">
+                  <div class="kanban-col-title">Contacted</div>
+                  <div class="kanban-item">Y Combinator</div>
+                </div>
+                <div class="kanban-col">
+                  <div class="kanban-col-title">Replied</div>
+                  <div class="kanban-empty">—</div>
+                </div>
+                <div class="kanban-col">
+                  <div class="kanban-col-title">Passed</div>
+                  <div class="kanban-empty">—</div>
+                </div>
+              </div>
+              <p style="font-size:0.75rem;color:var(--muted-fg);margin-top:0.75rem;line-height:1.55;">
+                The green "Sequoia Capital" card in the Saved column represents the newly saved investor — animated with a pop-in effect that makes the SavedBoard feel alive and responsive.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ SUMMARY ══ -->
+  <div class="summary-section">
+    <h2>Implementation Priority Matrix</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Direction</th>
+          <th>Change Required</th>
+          <th>User Impact</th>
+          <th>Dev Effort</th>
+          <th>Recommended Sprint</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>A — Intelligence First</strong><br/><span style="font-size:0.8125rem;color:var(--muted-fg);">fit_reasoning above the fold</span></td>
+          <td>Move <code>fit_reasoning</code> from FitBreakdown accordion to always-visible block in InvestorCard. Add left-accent typography treatment.</td>
+          <td class="impact-high">High — core trust signal now visible</td>
+          <td class="effort-low">Low — ~30 min CSS + JSX edit</td>
+          <td>Next sprint</td>
+        </tr>
+        <tr>
+          <td><strong>B — Progressive Form</strong><br/><span style="font-size:0.8125rem;color:var(--muted-fg);">textarea hero, filters collapsible</span></td>
+          <td>Add <code>showFilters</code> state to IdeaForm. Wrap 4 filter fields in conditional render. Add "Refine search" toggle button.</td>
+          <td class="impact-high">High — reduces friction for first-time users</td>
+          <td class="effort-low">Low — ~1 hour state + conditional render</td>
+          <td>Next sprint</td>
+        </tr>
+        <tr>
+          <td><strong>C — Milestone Limit</strong><br/><span style="font-size:0.8125rem;color:var(--muted-fg);">quota error reframing</span></td>
+          <td>Replace amber warning banner with milestone card component. Add progress bar (searches_this_month / 3). New MilestoneCard component.</td>
+          <td class="impact-med">Medium — improves conversion at quota wall</td>
+          <td class="effort-low">Low — ~2 hours new component</td>
+          <td>Next sprint</td>
+        </tr>
+        <tr>
+          <td><strong>D — Accomplished Save</strong><br/><span style="font-size:0.8125rem;color:var(--muted-fg);">save animation + status colors</span></td>
+          <td>Add Framer Motion scale animation to Save button on <code>onSuccess</code>. Update saved/contacted/replied status colors. Kanban pop-in animation.</td>
+          <td class="impact-med">Medium — reinforces CRM habit formation</td>
+          <td class="effort-med">Medium — ~3 hours animation + color system</td>
+          <td>Sprint +1</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+  // Smooth scroll for nav pills
+  document.querySelectorAll('.pill').forEach(pill => {
+    pill.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      const target = document.querySelector(pill.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+
+  // Highlight active section on scroll
+  const sections = document.querySelectorAll('.direction-section');
+  const pills = document.querySelectorAll('.pill');
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(section => {
+      if (window.scrollY >= section.offsetTop - 120) current = '#' + section.id;
+    });
+    pills.forEach(pill => {
+      pill.classList.toggle('active', pill.getAttribute('href') === current);
+    });
+  }, { passive: true });
+</script>
+</body>
+</html>
