@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { useState, useEffect, useRef } from 'react';
+import { motion, useInView, useReducedMotion } from 'framer-motion';
 import { SignInButton } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
+import { useCountUp } from '@/hooks/useCountUp';
+import { InvestorPreviewWindow } from './InvestorPreviewWindow';
 
 const SEARCHES = [
   'B2B SaaS for logistics, pre-seed, raising $1.5M',
@@ -13,11 +15,11 @@ const SEARCHES = [
   'Fintech for SMBs in Southeast Asia, seed, raising $4M',
 ];
 
-const STATS = [
-  { value: '2,400+', label: 'investors indexed' },
-  { value: '600+', label: 'founders onboarded' },
-  { value: 'avg 14', label: 'matches per search' },
-  { value: '<60s', label: 'to full results' },
+const STAT_LABELS = [
+  'investors indexed',
+  'founders onboarded',
+  'matches per search',
+  'to full results',
 ];
 
 const fadeUp = (delay = 0) => ({
@@ -26,11 +28,39 @@ const fadeUp = (delay = 0) => ({
   transition: { duration: 0.5, delay },
 });
 
+// Individual stat counter — each manages its own count-up animation
+function StatItem({
+  target,
+  duration,
+  format,
+  label,
+  enabled,
+}: {
+  target: number;
+  duration: number;
+  format: (n: number) => string;
+  label: string;
+  enabled: boolean;
+}) {
+  const count = useCountUp(target, duration, enabled);
+  return (
+    <div className="flex flex-col items-center gap-0.5">
+      <span className="text-xl font-bold tabular-nums">{format(count)}</span>
+      <span className="text-xs text-muted-foreground">{label}</span>
+    </div>
+  );
+}
+
 export function HeroSection() {
   const shouldReduceMotion = useReducedMotion();
   const [searchIdx, setSearchIdx] = useState(0);
   const [displayed, setDisplayed] = useState('');
   const [typing, setTyping] = useState(true);
+
+  // Stats count-up fires once when they scroll into view
+  const statsRef = useRef<HTMLDivElement>(null);
+  const statsInView = useInView(statsRef, { once: true, margin: '-60px' });
+  const countEnabled = statsInView && !shouldReduceMotion;
 
   useEffect(() => {
     if (shouldReduceMotion) {
@@ -126,7 +156,7 @@ export function HeroSection() {
       >
         <SignInButton mode="modal" forceRedirectUrl="/dashboard">
           <Button size="lg" className="px-8 text-base shadow-lg">
-            Find My Investors →
+            Find My Investors Free →
           </Button>
         </SignInButton>
         <a
@@ -137,21 +167,46 @@ export function HeroSection() {
         </a>
       </motion.div>
 
-      {/* Stats trust bar */}
+      {/* Stats trust bar — count up on scroll into view */}
       <motion.div
+        ref={statsRef}
         className="relative mt-12 flex flex-wrap justify-center gap-x-10 gap-y-4"
         {...(shouldReduceMotion ? {} : fadeUp(0.46))}
       >
-        {STATS.map((s, i) => (
-          <div key={s.label} className="flex flex-col items-center gap-0.5">
-            {i > 0 && (
-              <span className="hidden sm:block absolute h-6 w-px bg-border -left-5 top-1/2 -translate-y-1/2" />
-            )}
-            <span className="text-xl font-bold">{s.value}</span>
-            <span className="text-xs text-muted-foreground">{s.label}</span>
-          </div>
-        ))}
+        <StatItem
+          target={2400}
+          duration={1.6}
+          format={(n) => `${n.toLocaleString()}+`}
+          label={STAT_LABELS[0]}
+          enabled={countEnabled}
+        />
+        <StatItem
+          target={600}
+          duration={1.4}
+          format={(n) => `${n}+`}
+          label={STAT_LABELS[1]}
+          enabled={countEnabled}
+        />
+        <StatItem
+          target={14}
+          duration={1.0}
+          format={(n) => `avg ${n}`}
+          label={STAT_LABELS[2]}
+          enabled={countEnabled}
+        />
+        <StatItem
+          target={60}
+          duration={0.9}
+          format={(n) => `<${n}s`}
+          label={STAT_LABELS[3]}
+          enabled={countEnabled}
+        />
       </motion.div>
+
+      {/* Product preview window */}
+      <div className="relative w-full max-w-2xl">
+        <InvestorPreviewWindow />
+      </div>
     </section>
   );
 }
