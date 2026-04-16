@@ -9,6 +9,14 @@ import { LogOut, Pencil, Check, X, Sparkles, CalendarDays } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { PlanBadge } from '@/components/layout/PlanBadge';
 import { UsageBar } from '@/components/layout/UsageBar';
 import { apiFetch } from '@/lib/api';
@@ -46,6 +54,8 @@ export default function SettingsPage() {
   const [lastName, setLastName] = useState('');
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const [showSignOutDialog, setShowSignOutDialog] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
 
   const { data: meData, isPending } = useQuery({
     queryKey: ['user-me'],
@@ -78,6 +88,7 @@ export default function SettingsPage() {
   }
 
   async function handleSignOut() {
+    setSigningOut(true);
     await signOut();
     router.push('/');
   }
@@ -247,12 +258,32 @@ export default function SettingsPage() {
               Sign out of your account on this device
             </p>
           </div>
-          <Button variant="outline" size="sm" onClick={handleSignOut}>
+          <Button variant="outline" size="sm" onClick={() => setShowSignOutDialog(true)}>
             <LogOut className="h-3.5 w-3.5 mr-1.5" />
             Sign out
           </Button>
         </div>
       </section>
+
+      <Dialog open={showSignOutDialog} onOpenChange={setShowSignOutDialog}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Sign out?</DialogTitle>
+            <DialogDescription>
+              You'll be signed out of your account on this device.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setShowSignOutDialog(false)} disabled={signingOut}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleSignOut} disabled={signingOut}>
+              <LogOut className="h-3.5 w-3.5 mr-1.5" />
+              {signingOut ? 'Signing out…' : 'Sign out'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
