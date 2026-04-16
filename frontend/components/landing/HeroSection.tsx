@@ -1,11 +1,53 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { motion, useInView, useReducedMotion } from 'framer-motion';
+import { motion, useInView, useReducedMotion, AnimatePresence } from 'framer-motion';
 import { SignInButton } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
 import { useCountUp } from '@/hooks/useCountUp';
 import { InvestorPreviewWindow } from './InvestorPreviewWindow';
+
+const ACTIVITY_FEED = [
+  '14 founders searching right now',
+  'Priya just matched with 11 climate investors',
+  'Carlos found his lead investor in 48 hours',
+  '3 new investors added today',
+  '$2.1M raised by founders this week',
+  'James closed his round in 6 weeks',
+];
+
+function LiveActivityBadge() {
+  const [idx, setIdx] = useState(0);
+  const shouldReduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    if (shouldReduceMotion) return;
+    const id = setInterval(() => {
+      setIdx((prev) => (prev + 1) % ACTIVITY_FEED.length);
+    }, 3600);
+    return () => clearInterval(id);
+  }, [shouldReduceMotion]);
+
+  return (
+    <div className="flex items-center gap-2 text-xs text-muted-foreground bg-card/80 border border-border rounded-full px-3 py-1.5 mb-6 shadow-sm">
+      <span className="relative flex h-2 w-2 shrink-0">
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+      </span>
+      <AnimatePresence mode="wait">
+        <motion.span
+          key={idx}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.3 }}
+        >
+          {ACTIVITY_FEED[idx]}
+        </motion.span>
+      </AnimatePresence>
+    </div>
+  );
+}
 
 const SEARCHES = [
   'B2B SaaS for logistics, pre-seed, raising $1.5M',
@@ -114,6 +156,8 @@ export function HeroSection() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[280px] rounded-full bg-primary/5 blur-[90px]" />
       </div>
 
+      {!shouldReduceMotion && <LiveActivityBadge />}
+
       <motion.span
         className="relative inline-block text-xs font-semibold px-3 py-1.5 rounded-full bg-primary/10 text-primary mb-6 tracking-wide"
         {...(shouldReduceMotion ? {} : fadeUp(0))}
@@ -155,8 +199,9 @@ export function HeroSection() {
         {...(shouldReduceMotion ? {} : fadeUp(0.36))}
       >
         <SignInButton mode="modal" forceRedirectUrl="/dashboard">
-          <Button size="lg" className="px-8 text-base shadow-lg">
-            Find My Investors Free →
+          <Button size="lg" className="relative overflow-hidden px-8 text-base shadow-lg">
+            <span className="relative z-10">Get My Investors — Free →</span>
+            <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
           </Button>
         </SignInButton>
         <a

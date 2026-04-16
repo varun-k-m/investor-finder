@@ -57,6 +57,20 @@ const config: Config = {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      keyframes: {
+        shimmer: {
+          '0%': { transform: 'translateX(-250%)' },
+          '100%': { transform: 'translateX(250%)' },
+        },
+        marquee: {
+          from: { transform: 'translateX(0)' },
+          to: { transform: 'translateX(-50%)' },
+        },
+      },
+      animation: {
+        shimmer: 'shimmer 2.4s ease-in-out infinite',
+        marquee: 'marquee 32s linear infinite',
+      },
     },
   },
   plugins: [animate],
