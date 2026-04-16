@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useUser, useClerk, useAuth } from '@clerk/nextjs';
-import { useQuery } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { LogOut, Pencil, Check, X, Sparkles, CalendarDays } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useState } from "react";
+import { useUser, useClerk, useAuth } from "@clerk/nextjs";
+import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { LogOut, Pencil, Check, X, Sparkles, CalendarDays } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -16,16 +16,16 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { PlanBadge } from '@/components/layout/PlanBadge';
-import { UsageBar } from '@/components/layout/UsageBar';
-import { apiFetch } from '@/lib/api';
+} from "@/components/ui/dialog";
+import { PlanBadge } from "@/components/layout/PlanBadge";
+import { UsageBar } from "@/components/layout/UsageBar";
+import { apiFetch } from "@/lib/api";
 
 interface UserMe {
   id: string;
   email: string;
   name: string | null;
-  plan: 'free' | 'pro' | 'enterprise';
+  plan: "free" | "pro" | "enterprise";
   searches_used: number;
   searches_this_month: number;
   created_at: string;
@@ -38,9 +38,9 @@ const PLAN_LIMITS: Record<string, number> = {
 };
 
 const PLAN_DESCRIPTIONS: Record<string, string> = {
-  free: '3 searches / month included',
-  pro: 'Unlimited searches',
-  enterprise: 'Unlimited searches + priority support',
+  free: "3 searches / month included",
+  pro: "Unlimited searches",
+  enterprise: "Unlimited searches + priority support",
 };
 
 export default function SettingsPage() {
@@ -50,30 +50,30 @@ export default function SettingsPage() {
   const router = useRouter();
 
   const [editing, setEditing] = useState(false);
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState('');
+  const [saveError, setSaveError] = useState("");
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
 
   const { data: meData, isPending } = useQuery({
-    queryKey: ['user-me'],
-    queryFn: () => apiFetch<UserMe>('/users/me', getToken),
+    queryKey: ["user-me"],
+    queryFn: () => apiFetch<UserMe>("/users/me", getToken),
     staleTime: 5 * 60 * 1000,
   });
 
   function startEdit() {
-    setFirstName(clerkUser?.firstName ?? '');
-    setLastName(clerkUser?.lastName ?? '');
-    setSaveError('');
+    setFirstName(clerkUser?.firstName ?? "");
+    setLastName(clerkUser?.lastName ?? "");
+    setSaveError("");
     setEditing(true);
   }
 
   async function saveProfile() {
     if (!clerkUser) return;
     setSaving(true);
-    setSaveError('');
+    setSaveError("");
     try {
       await clerkUser.update({
         firstName: firstName.trim() || undefined,
@@ -81,7 +81,7 @@ export default function SettingsPage() {
       });
       setEditing(false);
     } catch (e) {
-      setSaveError((e as Error).message ?? 'Failed to update profile');
+      setSaveError((e as Error).message ?? "Failed to update profile");
     } finally {
       setSaving(false);
     }
@@ -90,16 +90,16 @@ export default function SettingsPage() {
   async function handleSignOut() {
     setSigningOut(true);
     await signOut();
-    router.push('/');
+    router.push("/");
   }
 
-  const plan = meData?.plan ?? 'free';
+  const plan = meData?.plan ?? "free";
   const limit = PLAN_LIMITS[plan] ?? 3;
   const memberSince = meData?.created_at
-    ? new Date(meData.created_at).toLocaleDateString('en-GB', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
+    ? new Date(meData.created_at).toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
       })
     : null;
 
@@ -126,7 +126,7 @@ export default function SettingsPage() {
             {!editing ? (
               <>
                 <p className="font-semibold text-base leading-tight">
-                  {clerkUser?.fullName ?? '—'}
+                  {clerkUser?.fullName ?? "—"}
                 </p>
                 <p className="text-sm text-muted-foreground">
                   {clerkUser?.primaryEmailAddress?.emailAddress}
@@ -158,7 +158,12 @@ export default function SettingsPage() {
 
           <div className="shrink-0">
             {!editing ? (
-              <Button size="sm" variant="outline" onClick={startEdit} disabled={!isLoaded}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={startEdit}
+                disabled={!isLoaded}
+              >
                 <Pencil className="h-3.5 w-3.5 mr-1.5" />
                 Edit name
               </Button>
@@ -166,7 +171,7 @@ export default function SettingsPage() {
               <div className="flex gap-1.5">
                 <Button size="sm" onClick={saveProfile} disabled={saving}>
                   <Check className="h-3.5 w-3.5 mr-1" />
-                  {saving ? 'Saving…' : 'Save'}
+                  {saving ? "Saving…" : "Save"}
                 </Button>
                 <Button
                   size="sm"
@@ -210,11 +215,11 @@ export default function SettingsPage() {
                   <PlanBadge plan={plan} />
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {PLAN_DESCRIPTIONS[plan] ?? 'Unknown plan'}
+                  {PLAN_DESCRIPTIONS[plan] ?? "Unknown plan"}
                 </p>
               </div>
 
-              {plan === 'free' && (
+              {plan === "free" && (
                 <Button asChild size="sm">
                   <Link href="/pricing">
                     <Sparkles className="h-3.5 w-3.5 mr-1.5" />
@@ -222,22 +227,22 @@ export default function SettingsPage() {
                   </Link>
                 </Button>
               )}
-              {plan === 'pro' && (
+              {plan === "pro" && (
                 <Button asChild size="sm" variant="outline">
                   <Link href="/pricing">Manage Plan</Link>
                 </Button>
               )}
             </div>
 
-            {plan === 'free' && meData && (
+            {plan === "free" && meData && (
               <UsageBar used={meData.searches_this_month} limit={limit} />
             )}
 
-            {plan !== 'free' && meData && (
+            {plan !== "free" && meData && (
               <div className="text-sm text-muted-foreground">
                 <span className="font-semibold text-foreground">
                   {meData.searches_this_month}
-                </span>{' '}
+                </span>{" "}
                 searches this month
               </div>
             )}
@@ -258,7 +263,11 @@ export default function SettingsPage() {
               Sign out of your account on this device
             </p>
           </div>
-          <Button variant="outline" size="sm" onClick={() => setShowSignOutDialog(true)}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowSignOutDialog(true)}
+          >
             <LogOut className="h-3.5 w-3.5 mr-1.5" />
             Sign out
           </Button>
@@ -270,16 +279,24 @@ export default function SettingsPage() {
           <DialogHeader>
             <DialogTitle>Sign out?</DialogTitle>
             <DialogDescription>
-              You'll be signed out of your account on this device.
+              You&apos;ll be signed out of your account on this device.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setShowSignOutDialog(false)} disabled={signingOut}>
+            <Button
+              variant="outline"
+              onClick={() => setShowSignOutDialog(false)}
+              disabled={signingOut}
+            >
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleSignOut} disabled={signingOut}>
+            <Button
+              variant="destructive"
+              onClick={handleSignOut}
+              disabled={signingOut}
+            >
               <LogOut className="h-3.5 w-3.5 mr-1.5" />
-              {signingOut ? 'Signing out…' : 'Sign out'}
+              {signingOut ? "Signing out…" : "Sign out"}
             </Button>
           </DialogFooter>
         </DialogContent>
